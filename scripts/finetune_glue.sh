@@ -14,4 +14,6 @@ python -m sigtestv.run.finetune_bert_glue \
   --per_gpu_train_batch_size 32 \
   --learning_rate 4e-5 \
   --num_train_epochs 3.0 \
+  --save_steps 4000 \
+  --overwrite_output_dir \
   --output_dir $OUTPUT_DIR
