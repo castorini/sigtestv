@@ -131,6 +131,6 @@ if __name__ == '__main__':
                                           seed_range=(1, 100),
                                           cli_opt_name='-c')
     # logger = DatabaseLogger(ResultsDatabase('tmptest.db'))
-    logger = NetLogger('http://0.0.0.0:5358/submit')
+    logger = NetLogger('http://dragon.cs.uwaterloo.ca:8080/submit')
     pipeline = EvaluationPipeline(config_generator, SubprocessRunner(), [PingExtractor()], [logger])
     pipeline()

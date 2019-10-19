@@ -11,8 +11,8 @@ python -m sigtestv.run.finetune_bert_glue \
   --data_dir $GLUE_DIR/$TASK_NAME \
   --seed $SEED \
   --max_seq_length 128 \
-  --per_gpu_train_batch_size 32 \
-  --learning_rate 4e-5 \
+  --train_batch_size 32 \
+  --learning_rate 3e-5 \
   --num_train_epochs 3.0 \
   --save_steps 4000 \
   --overwrite_output_dir \

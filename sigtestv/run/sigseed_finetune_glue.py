@@ -1,7 +1,7 @@
 import argparse
 
 from sigtestv.evaluate import RunConfiguration, RangeSeedGenerator, EvaluationPipeline, SubprocessRunner, BertExtractor
-from sigtestv.net import NetLogger
+from sigtestv.net import NetLogger, OfflineNetLogger
 from sigtestv.database import ResultsDatabase, DatabaseLogger
 
 
@@ -14,8 +14,9 @@ def main():
     parser.add_argument('--seed-range', type=int, nargs=2, required=True)
     parser.add_argument('--output-dir', type=str, required=True)
     parser.add_argument('--learning-rate', type=float, default=4e-5)
-    parser.add_argument('--logger-endpoint', type=str, default='http://0.0.0.0:5358/submit')
+    parser.add_argument('--logger-endpoint', type=str, default='http://0.0.0.0:8080/submit')
     parser.add_argument('--database-file', '-d', type=str, default='bak.db')
+    parser.add_argument('--log-file', '-l', type=str, default='log.jsonl')
     args = parser.parse_args()
 
     base_command = 'python -m sigtestv.run.finetune_glue'
@@ -39,7 +40,11 @@ def main():
     config_generator = RangeSeedGenerator(config, seed_range=args.seed_range)
     net_logger = NetLogger(args.logger_endpoint)
     db_logger = DatabaseLogger(ResultsDatabase(args.database_file))
-    pipeline = EvaluationPipeline(config_generator, SubprocessRunner(), [BertExtractor()], [net_logger, db_logger])
+    offline_logger = OfflineNetLogger(args.log_file)
+    pipeline = EvaluationPipeline(config_generator,
+                                  SubprocessRunner(),
+                                  [BertExtractor()],
+                                  [net_logger, db_logger, offline_logger])
     pipeline()
 
 

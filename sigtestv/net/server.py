@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+import json
 
 import cherrypy
 import requests
@@ -20,6 +21,28 @@ class NetLogger(PipelineComponent):
             requests.post(self.endpoint, json=data)
         except requests.exceptions.ConnectionError:
             pass
+
+
+@dataclass
+class OfflineNetLogger(PipelineComponent):
+    filename: str
+
+    def __call__(self, run_config, results):
+        data = [run_config.model_name,
+                run_config.dataset_name,
+                run_config.command_base,
+                [x.tolist() for x in results],
+                list(run_config.hyperparameters.items())]
+        with open(self.filename, 'a') as f:
+            print(json.dumps(data), file=f)
+
+
+def replay_data_log(filename, endpoint):
+    with open(filename) as f:
+        lines = f.readlines()
+    for line in lines:
+        data = json.loads(line)
+        requests.post(endpoint, json=data)
 
 
 @cherrypy.expose
