@@ -1,3 +1,4 @@
 cherrypy
 dataclasses
+pandas
 tqdm

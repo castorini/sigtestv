@@ -58,6 +58,9 @@ class RunConfiguration(object):
         hyperparams.update(self.env_vars)
         return hyperparams
 
+    def attr(self, name):
+        return self.hyperparameters.get(name)
+
     def check_requires(self, bool_expr):
         return bool_expr.evaluate(set(self.hyperparameters.keys()))
 

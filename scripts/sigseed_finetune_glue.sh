@@ -7,6 +7,6 @@ python -m sigtestv.run.sigseed_finetune_glue \
   --model-name-or-path bert-base-uncased \
   --task-name $TASK_NAME \
   --data-dir $GLUE_DIR \
-  --learning-rate 4e-5 \
+  --learning-rate 3e-5 \
   --output-dir /mnt/hdd/run \
   --logger-endpoint http://hydra.cs.uwaterloo.ca:8080/submit

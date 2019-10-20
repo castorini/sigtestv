@@ -18,8 +18,8 @@ class NetLogger(PipelineComponent):
                 [x.tolist() for x in results],
                 list(run_config.hyperparameters.items())]
         try:
-            requests.post(self.endpoint, json=data)
-        except requests.exceptions.ConnectionError:
+            requests.post(self.endpoint, json=data, timeout=10)
+        except (requests.exceptions.ConnectionError, requests.exceptions.Timeout):
             pass
 
 
