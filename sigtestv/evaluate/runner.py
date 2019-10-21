@@ -112,6 +112,7 @@ class RangeSeedGenerator(ConfigGenerator):
 
     def __iter__(self):
         env = os.environ.copy()
+        format_str = self.base_config.options[self.format_opt]
         for seed in range(*self.seed_range):
             if self.pass_type == 'cli':
                 self.base_config.options[self.cli_opt_name] = str(seed)
@@ -119,7 +120,7 @@ class RangeSeedGenerator(ConfigGenerator):
                 env[self.env_opt_name] = str(seed)
                 self.base_config.env_vars = env
             if self.format_opt in self.base_config.options:
-                self.base_config.options[self.format_opt] = self.base_config.options[self.format_opt].format(seed=seed)
+                self.base_config.options[self.format_opt] = format_str.format(seed=seed)
             yield self.base_config
 
     def __len__(self):
