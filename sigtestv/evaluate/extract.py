@@ -1,14 +1,19 @@
 import pathlib
 import re
 
+import torch
+
 from .runner import PipelineComponent, RunConfiguration, bexpr
 from .result import ExperimentResult, SetTypeEnum
 
 
 class BertExtractor(PipelineComponent):
 
+    def __init__(self, output_dir_key='--output_dir'):
+        self.output_dir_key = output_dir_key
+
     def __call__(self, config: RunConfiguration, stdout: str):
-        output_dir = config.hyperparameters.get('--output_dir')
+        output_dir = config.hyperparameters.get(self.output_dir_key)
         if output_dir is None: output_dir = config.hyperparameters['-o']
         path = pathlib.Path(output_dir) / 'eval_results.txt'
         with open(path) as f:
@@ -21,7 +26,28 @@ class BertExtractor(PipelineComponent):
         return results
 
     def requires(self):
-        return bexpr('--output_dir') | bexpr('-o')
+        return bexpr(self.output_dir_key)
+
+
+class BiRNNExtractor(PipelineComponent):
+
+    def __init__(self, output_dir_key='--workspace'):
+        self.output_dir_key = output_dir_key
+
+    def __call__(self, config: RunConfiguration, stdout: str):
+        output_dir = config.hyperparameters.get(self.output_dir_key)
+        path = pathlib.Path(output_dir) / 'best_model.pt'
+        sd = torch.load(path)
+        results = []
+        for key, value in sd.items():
+            if not key.startswith('dev_'):
+                continue
+            name = key[4:]
+            results.append(ExperimentResult(value, name, SetTypeEnum.DEV.value))
+        return results
+
+    def requires(self):
+        return bexpr(self.output_dir_key)
 
 
 class PingExtractor(PipelineComponent):
