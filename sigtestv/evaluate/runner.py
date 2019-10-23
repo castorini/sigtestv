@@ -51,8 +51,8 @@ class RunConfiguration(object):
             self.options = {}
         if self.env_vars is None:
             self.env_vars = os.environ
-        self.options = {k: str(v) for k, v in self.options.items()}
-        self.env_vars = {k: str(v) for k, v in self.env_vars.items()}
+        self.options = {k: v if v is None else str(v) for k, v in self.options.items()}
+        self.env_vars = {k: v if v is None else str(v) for k, v in self.env_vars.items()}
 
     @property
     def hyperparameters(self):

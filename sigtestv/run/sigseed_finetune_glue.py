@@ -18,6 +18,7 @@ def main():
     parser.add_argument('--log-file', '-l', type=str, default='log.jsonl')
     parser.add_argument('--base-command', type=str, default='python -m sigtestv.run.finetune_glue')
     parser.add_argument('--online', action='store_true')
+    parser.add_argument('--format-opt', type=str, default='--output_dir')
     args = parser.parse_args()
 
     model_name = args.model_name_or_path
