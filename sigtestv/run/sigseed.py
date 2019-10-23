@@ -1,11 +1,11 @@
 import secrets
 
-from sigtestv.evaluate import RunConfiguration, SeedConfigGenerator, EvaluationPipeline, SubprocessRunner, BiRNNExtractor
+from sigtestv.evaluate import RunConfiguration, SeedConfigGenerator, EvaluationPipeline, SubprocessRunner
 from sigtestv.net import NetLogger, OfflineNetLogger
 from sigtestv.database import ResultsDatabase, DatabaseLogger
 
 
-def run_seed_finetuning(args, model_name, options):
+def run_seed_finetuning(args, model_name, options, extractor):
     if args.seed_range is None:
         seeds = [secrets.randbits(31) for _ in range(args.seed_iter)]
     else:
@@ -22,6 +22,6 @@ def run_seed_finetuning(args, model_name, options):
     if args.online: loggers.append(net_logger)
     pipeline = EvaluationPipeline(config_generator,
                                   SubprocessRunner(),
-                                  [BiRNNExtractor()],
+                                  [extractor],
                                   loggers)
     pipeline()

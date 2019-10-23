@@ -1,5 +1,6 @@
 import argparse
 
+from sigtestv.evaluate import BiRNNExtractor
 from .sigseed import run_seed_finetuning
 
 
@@ -29,7 +30,7 @@ def main():
                '--mode': 'multichannel',
                '--dropout': 0.1,
                '--workspace': f'{args.output_dir}-{args.task_name}-{model_name}-{{seed}}'}
-    run_seed_finetuning(args, model_name, options)
+    run_seed_finetuning(args, model_name, options, BiRNNExtractor())
 
 
 if __name__ == '__main__':

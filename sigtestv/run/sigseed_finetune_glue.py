@@ -1,5 +1,6 @@
 import argparse
 
+from sigtestv.evaluate import BertExtractor
 from .sigseed import run_seed_finetuning
 
 
@@ -36,7 +37,7 @@ def main():
                '--save_steps': 10000,
                '--overwrite_output_dir': None,
                '--output_dir': f'{args.output_dir}-{args.task_name}-{args.model_name_or_path}-{{seed}}'}
-    run_seed_finetuning(args, model_name, options)
+    run_seed_finetuning(args, model_name, options, BertExtractor())
 
 
 if __name__ == '__main__':
