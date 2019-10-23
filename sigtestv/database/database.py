@@ -73,7 +73,7 @@ class ResultsDatabase(object):
                 c.execute('INSERT INTO model(name) VALUES (?)', (model_name,))
                 model_id = c.lastrowid
 
-            c.execute('INSERT INTO experiment(model_id, command_text, dataset_name) VALUES(?, ?, ?)', (model_id, full_command_str, dataset_name))
+            c.execute('INSERT INTO experiment(model_id, command_text, dataset_name) VALUES (?, ?, ?)', (model_id, full_command_str, dataset_name))
             exp_id = c.lastrowid
 
             values = []

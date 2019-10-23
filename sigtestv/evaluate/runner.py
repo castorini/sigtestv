@@ -94,7 +94,7 @@ class ConfigGenerator(object):
         raise NotImplementedError
 
 
-class RangeSeedGenerator(ConfigGenerator):
+class SeedConfigGenerator(ConfigGenerator):
 
     def __init__(self,
                  base_config,
@@ -102,8 +102,11 @@ class RangeSeedGenerator(ConfigGenerator):
                  seed_range=(0, 100),
                  env_opt_name='SEED',
                  cli_opt_name='--seed',
-                 format_opt='--output_dir'):
-        self.seed_range = seed_range
+                 format_opt='--output_dir',
+                 seeds=None):
+        if seeds is None:
+            seeds = list(range(*seed_range))
+        self.seeds = seeds
         self.pass_type = pass_type
         self.base_config = base_config
         self.env_opt_name = env_opt_name
@@ -113,7 +116,7 @@ class RangeSeedGenerator(ConfigGenerator):
     def __iter__(self):
         env = os.environ.copy()
         format_str = self.base_config.options[self.format_opt]
-        for seed in range(*self.seed_range):
+        for seed in self.seeds:
             if self.pass_type == 'cli':
                 self.base_config.options[self.cli_opt_name] = str(seed)
             else:
@@ -124,7 +127,7 @@ class RangeSeedGenerator(ConfigGenerator):
             yield self.base_config
 
     def __len__(self):
-        return self.seed_range[1] - self.seed_range[0]
+        return len(self.seeds)
 
 
 if __name__ == '__main__':
@@ -133,9 +136,9 @@ if __name__ == '__main__':
     from sigtestv.database import DatabaseLogger, ResultsDatabase
     print(SubprocessRunner()(RunConfiguration('list', 'ls', '', {'-laht': None})))
     print(((bexpr('a') & bexpr('b')) | bexpr('c')).evaluate({'c'}))
-    config_generator = RangeSeedGenerator(RunConfiguration('ping_test', 'ping asdf.com', ''),
-                                          seed_range=(1, 100),
-                                          cli_opt_name='-c')
+    config_generator = SeedConfigGenerator(RunConfiguration('ping_test', 'ping asdf.com', ''),
+                                           seed_range=(1, 100),
+                                           cli_opt_name='-c')
     # logger = DatabaseLogger(ResultsDatabase('tmptest.db'))
     logger = NetLogger('http://dragon.cs.uwaterloo.ca:8080/submit')
     pipeline = EvaluationPipeline(config_generator, SubprocessRunner(), [PingExtractor()], [logger])
