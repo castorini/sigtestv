@@ -1,8 +1,8 @@
 import secrets
 
-from sigtestv.evaluate import RunConfiguration, SeedConfigGenerator, EvaluationPipeline, SubprocessRunner
+from sigtestv.evaluate import RunConfiguration, SeedConfigGenerator, EvaluationPipeline, SubprocessRunner, IdentityConfigWrapper
 from sigtestv.net import NetLogger, OfflineNetLogger
-from sigtestv.database import ResultsDatabase, DatabaseLogger
+from sigtestv.database import ResultsDatabase, DatabaseLogger, DatabaseUpdateLogger
 
 
 def run_seed_finetuning(args, model_name, options, extractor):
@@ -25,3 +25,20 @@ def run_seed_finetuning(args, model_name, options, extractor):
                                   [extractor],
                                   loggers)
     pipeline()
+
+
+def run_pipeline(args, model_name, options, extractor, metadata=None):
+    base_command = args.base_command
+    dataset_name = args.task_name
+    config = RunConfiguration(model_name, base_command, dataset_name, options)
+    config_generator = IdentityConfigWrapper(config, metadata=metadata)
+    net_logger = NetLogger(args.logger_endpoint)
+    db_logger = DatabaseUpdateLogger(ResultsDatabase(args.database_file))
+    offline_logger = OfflineNetLogger(args.log_file)
+    loggers = [db_logger, offline_logger]
+    if args.online: loggers.append(net_logger)
+    pipeline = EvaluationPipeline(config_generator,
+                                  SubprocessRunner(),
+                                  [extractor],
+                                  loggers)
+    pipeline(use_tqdm=False)

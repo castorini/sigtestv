@@ -2,6 +2,8 @@ from dataclasses import dataclass
 from tqdm import tqdm
 import abc
 
+from .result import CompletedRun
+
 
 class PipelineComponent(object):
 
@@ -31,13 +33,14 @@ class EvaluationPipeline(object):
     def state_dict(self):
         return dict(generator_idx=self.generator_idx, config_generator=self.config_generator.state_dict())
 
-    def __call__(self):
+    def __call__(self, use_tqdm=True):
         gen_iter = iter(self.config_generator)
         for _ in range(self.generator_idx): next(gen_iter)
-        for config in tqdm(gen_iter,
+        for config, metadata in tqdm(gen_iter,
                            total=len(self.config_generator),
                            initial=self.generator_idx,
-                           desc='Running pipeline'):
+                           desc='Running pipeline',
+                           disable=not use_tqdm):
             config.check_requires(self.runner.requires())
             for ex in self.extractors:
                 config.check_requires(ex.requires())
@@ -52,7 +55,7 @@ class EvaluationPipeline(object):
                 else:
                     exp_results.append(ret_val)
             for logger in self.loggers:
-                logger(config, exp_results)
+                logger(CompletedRun(config, exp_results, metadata=metadata))
             self.generator_idx += 1
 
 

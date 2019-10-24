@@ -1,5 +1,6 @@
 from dataclasses import dataclass
 import enum
+from typing import List
 
 
 class SetTypeEnum(enum.Enum):
@@ -19,29 +20,37 @@ class ResultTypeEnum(enum.Enum):
     TYPELESS = 'typeless'
 
 
+class CompletedRun(object):
+
+    def __init__(self, run_config, results, metadata=None):
+        self.run_config = run_config
+        self.results = results
+        self.metadata = metadata
+
+
 class RunCollection(object):
 
-    def __init__(self, run_configs, results):
-        self.run_configs = run_configs
-        self.results = results
+    def __init__(self, runs: List[CompletedRun]):
+        self.runs = runs
 
     def filter_by_option(self, option_name, option_value):
-        run_configs, results = list(zip(*list(filter(lambda x: x[0].options.get(option_name) == str(option_value),
-                                                     zip(self.run_configs, self.results)))))
-        return RunCollection(run_configs, results)
+        runs = list(filter(lambda x: x.run_config.options.get(option_name) == str(option_value), self.runs))
+        return RunCollection(runs)
 
     def filter_by_options(self, option_dict):
         collection = self
         for option_name, option_value in option_dict.items():
+            if option_value is not None:
+                option_value = str(option_value)
             collection = collection.filter_by_option(option_name, option_value)
         return collection
 
     def extract_results(self, result_name, set_type):
         results = []
-        for run_config, results_list in zip(self.run_configs, self.results):
-            for result in results_list:
+        for run in self.runs:
+            for result in run.results:
                 if result.name == result_name and result.set_type == set_type:
-                    results.append((run_config, result.value))
+                    results.append((run.run_config, result.value))
                     break
         return results
 

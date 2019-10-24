@@ -9,8 +9,9 @@ from .result import ExperimentResult, SetTypeEnum
 
 class BertExtractor(PipelineComponent):
 
-    def __init__(self, output_dir_key='--output_dir'):
+    def __init__(self, output_dir_key='--output_dir', set_type=SetTypeEnum.DEV):
         self.output_dir_key = output_dir_key
+        self.set_type = set_type.value
 
     def __call__(self, config: RunConfiguration, stdout: str):
         output_dir = config.hyperparameters.get(self.output_dir_key)
@@ -22,7 +23,7 @@ class BertExtractor(PipelineComponent):
         for line in lines:
             line = line.strip()
             name, value = line.split(' = ')
-            results.append(ExperimentResult(float(value), name, SetTypeEnum.DEV.value))
+            results.append(ExperimentResult(float(value), name, self.set_type))
         return results
 
     def requires(self):
@@ -31,8 +32,9 @@ class BertExtractor(PipelineComponent):
 
 class BiRNNExtractor(PipelineComponent):
 
-    def __init__(self, output_dir_key='--workspace'):
+    def __init__(self, output_dir_key='--workspace', set_type=SetTypeEnum.DEV):
         self.output_dir_key = output_dir_key
+        self.set_type = set_type.value
 
     def __call__(self, config: RunConfiguration, stdout: str):
         output_dir = config.hyperparameters.get(self.output_dir_key)
@@ -43,11 +45,21 @@ class BiRNNExtractor(PipelineComponent):
             if not key.startswith('dev_'):
                 continue
             name = key[4:]
-            results.append(ExperimentResult(value, name, SetTypeEnum.DEV.value))
+            results.append(ExperimentResult(value, name, self.set_type))
         return results
 
     def requires(self):
         return bexpr(self.output_dir_key)
+
+
+class BiRNNCliExtractor(PipelineComponent):
+
+    def __init__(self, set_type=SetTypeEnum.DEV):
+        self.set_type = set_type.value
+
+    def __call__(self, config: RunConfiguration, stdout: str):
+        results = re.findall('(.+?) = (.+?)\n', stdout)
+        return [ExperimentResult(float(value), name, self.set_type) for name, value in results]
 
 
 class PingExtractor(PipelineComponent):

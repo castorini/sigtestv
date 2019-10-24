@@ -3,7 +3,7 @@ from dataclasses import dataclass
 from typing import List, Tuple
 import sqlite3
 
-from sigtestv.evaluate import ExperimentResult, RunConfiguration, PipelineComponent, RunCollection
+from sigtestv.evaluate import ExperimentResult, RunConfiguration, PipelineComponent, RunCollection, CompletedRun
 
 
 class ConnectionContextManager(object):
@@ -70,12 +70,15 @@ class ResultsDatabase(object):
 
         configs = []
         results = []
+        metadatas = []
         for exp_id, (model_name, cmd_txt, ds_name) in exp_metadata.items():
             options = dict(filter(lambda x: x[0].startswith('-'), set(exp_opts[exp_id])))
             env_vars = dict(filter(lambda x: not x[0].startswith('-'), set(exp_opts[exp_id])))
             configs.append(RunConfiguration(model_name, cmd_txt, ds_name, options, env_vars))
             results.append([ExperimentResult(*x) for x in set(exp_results[exp_id])])
-        return RunCollection(configs, results, metadata=[dict(exp_id=exp_id) for exp_id, _ in exp_metadata])
+            metadatas.append(dict(exp_id=exp_id))
+        runs = [CompletedRun(cfg, res, metadata=md) for cfg, res, md in zip(configs, results, metadatas)]
+        return RunCollection(runs)
 
     def add_result(self, exp_id, results: List[ExperimentResult], ctx=None):
         if ctx is None: ctx = open_context(self.filename)
@@ -118,9 +121,19 @@ class ResultsDatabase(object):
 class DatabaseLogger(PipelineComponent):
     database: ResultsDatabase
 
-    def __call__(self, run_config: RunConfiguration, results: List[ExperimentResult], **kwargs):
+    def __call__(self, run: CompletedRun):
+        run_config = run.run_config
+        results = run.results
         self.database.insert_result(run_config.model_name,
                                     run_config.dataset_name,
                                     run_config.command_base,
                                     results,
                                     list(run_config.hyperparameters.items()))
+
+
+@dataclass
+class DatabaseUpdateLogger(PipelineComponent):
+    database: ResultsDatabase
+
+    def __call__(self, run):
+        self.database.add_result(run.metadata['exp_id'], run.results)

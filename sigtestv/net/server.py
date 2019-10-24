@@ -11,7 +11,9 @@ from sigtestv.evaluate import PipelineComponent, ExperimentResult
 class NetLogger(PipelineComponent):
     endpoint: str
 
-    def __call__(self, run_config, results):
+    def __call__(self, run):
+        run_config = run.run_config
+        results = run.results
         data = [run_config.model_name,
                 run_config.dataset_name,
                 run_config.command_base,
@@ -27,7 +29,9 @@ class NetLogger(PipelineComponent):
 class OfflineNetLogger(PipelineComponent):
     filename: str
 
-    def __call__(self, run_config, results):
+    def __call__(self, run):
+        run_config = run.run_config
+        results = run.results
         data = [run_config.model_name,
                 run_config.dataset_name,
                 run_config.command_base,

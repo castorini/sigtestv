@@ -124,10 +124,23 @@ class SeedConfigGenerator(ConfigGenerator):
                 self.base_config.env_vars = env
             if self.format_opt in self.base_config.options:
                 self.base_config.options[self.format_opt] = format_str.format(seed=seed)
-            yield self.base_config
+            yield self.base_config, dict(seed=seed)
 
     def __len__(self):
         return len(self.seeds)
+
+
+class IdentityConfigWrapper(ConfigGenerator):
+
+    def __init__(self, base_config, metadata=None):
+        self.config = base_config
+        self.metadata = metadata
+
+    def __iter__(self):
+        yield self.config, self.metadata
+
+    def __len__(self):
+        return 1
 
 
 if __name__ == '__main__':
