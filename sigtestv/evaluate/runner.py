@@ -1,5 +1,6 @@
 from dataclasses import dataclass
 from typing import Dict
+import io
 import subprocess
 import os
 
@@ -69,14 +70,26 @@ class RunConfiguration(object):
 
 class SubprocessRunner(PipelineComponent):
 
+    def __init__(self, line_write_callback=None):
+        self.line_write_cb = line_write_callback
+
     def __call__(self, run_config):
         command_args = [run_config.command_base]
+        sio = io.StringIO()
         for k, v in run_config.options.items():
             command_args.append(k)
             if v: command_args.append(v)
-        result = subprocess.run(' '.join(command_args), shell=True, capture_output=True, env=run_config.env_vars)
-        print(result.stderr.decode())
-        return result.stdout.decode()
+        result = subprocess.Popen(' '.join(command_args),
+                                  shell=True,
+                                  env=run_config.env_vars,
+                                  stdout=subprocess.PIPE,
+                                  bufsize=0)
+        for line in iter(result.stdout.readline, b''):
+            line = line.decode()
+            sio.write(line)
+            if self.line_write_cb is not None:
+                self.line_write_cb(line.rstrip())
+        return sio.getvalue()
 
 
 class ConfigGenerator(object):

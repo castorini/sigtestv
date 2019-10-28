@@ -52,6 +52,20 @@ class BiRNNExtractor(PipelineComponent):
         return bexpr(self.output_dir_key)
 
 
+class JiantExtractor(PipelineComponent):
+
+    def __init__(self, set_type=SetTypeEnum.DEV):
+        self.set_type = set_type.value
+
+    def __call__(self, config: RunConfiguration, stdout: str):
+        lines = stdout.splitlines()
+        idx = 0
+        for idx, line in enumerate(lines):
+            if 'VALIDATION RESULTS' in line:
+                break
+        return [ExperimentResult(float(v), k, self.set_type) for k, v in re.findall(r'_(\w+?): (\d+\.\d+)', lines[idx + 1])]
+
+
 class BiRNNCliExtractor(PipelineComponent):
 
     def __init__(self, set_type=SetTypeEnum.DEV):

@@ -1,12 +1,14 @@
 import secrets
 
+from tqdm import tqdm
+
 from sigtestv.evaluate import RunConfiguration, SeedConfigGenerator, EvaluationPipeline, SubprocessRunner, IdentityConfigWrapper
 from sigtestv.net import NetLogger, OfflineNetLogger
 from sigtestv.database import ResultsDatabase, DatabaseLogger, DatabaseUpdateLogger
 
 
 def run_seed_finetuning(args, model_name, options, extractor):
-    if args.seed_range is None:
+    if not hasattr(args, 'seed_range') or args.seed_range is None:
         seeds = [secrets.randbits(31) for _ in range(args.seed_iter)]
     else:
         seeds = list(range(*args.seed_range))
@@ -21,7 +23,7 @@ def run_seed_finetuning(args, model_name, options, extractor):
     loggers = [db_logger, offline_logger]
     if args.online: loggers.append(net_logger)
     pipeline = EvaluationPipeline(config_generator,
-                                  SubprocessRunner(),
+                                  SubprocessRunner(line_write_callback=tqdm.write),
                                   [extractor],
                                   loggers)
     pipeline()

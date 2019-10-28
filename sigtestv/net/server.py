@@ -18,7 +18,7 @@ class NetLogger(PipelineComponent):
                 run_config.dataset_name,
                 run_config.command_base,
                 [x.tolist() for x in results],
-                list(run_config.hyperparameters.items())]
+                list(run_config.options.items())]
         try:
             requests.post(self.endpoint, json=data, timeout=10)
         except (requests.exceptions.ConnectionError, requests.exceptions.Timeout):
@@ -36,7 +36,7 @@ class OfflineNetLogger(PipelineComponent):
                 run_config.dataset_name,
                 run_config.command_base,
                 [x.tolist() for x in results],
-                list(run_config.hyperparameters.items())]
+                list(run_config.options.items())]
         with open(self.filename, 'a') as f:
             print(json.dumps(data), file=f)
 

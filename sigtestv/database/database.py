@@ -120,15 +120,17 @@ class ResultsDatabase(object):
 @dataclass
 class DatabaseLogger(PipelineComponent):
     database: ResultsDatabase
+    log_env_vars: bool = False
 
     def __call__(self, run: CompletedRun):
         run_config = run.run_config
         results = run.results
+        log_options = list(run_config.hyperparameters.items()) if self.log_env_vars else list(run_config.options)
         self.database.insert_result(run_config.model_name,
                                     run_config.dataset_name,
                                     run_config.command_base,
                                     results,
-                                    list(run_config.hyperparameters.items()))
+                                    log_options)
 
 
 @dataclass

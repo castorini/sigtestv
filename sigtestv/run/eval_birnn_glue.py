@@ -24,6 +24,7 @@ def main():
     parser.add_argument('--chunk-idx', type=int, default=0)
     parser.add_argument('--chunks', type=int, default=1)
     parser.add_argument('--online', action='store_true')
+    parser.add_argument('--exp-id-range', type=int, nargs=2)
     args = parser.parse_args()
 
     db = ResultsDatabase(args.database_file)
@@ -33,6 +34,8 @@ def main():
     for run in tqdm(list(chunk(rc.runs, args.chunks))[args.chunk_idx]):
         options = run.run_config.options
         exp_id = run.metadata['exp_id']
+        if args.exp_id_range and not (args.exp_id_range[0] <= exp_id <= args.exp_id_range[1]):
+            continue
         options['--dataset_path'] = args.data_dir
         options['--load_best_checkpoint'] = None
         options['--eval_test_labeled'] = None
