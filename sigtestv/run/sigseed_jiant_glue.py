@@ -11,7 +11,7 @@ def main():
     parser.add_argument('--data-dir', '-d', type=Path, required=True)
     parser.add_argument('--word-embeddings-file', '-emb', type=Path, required=True)
     parser.add_argument('--config-file', '-c', type=Path, default='confs/jiant_base.conf')
-    parser.add_argument('--seed-iter', type=int)
+    parser.add_argument('--seed-iter', type=int, required=True)
     parser.add_argument('--task-name', type=str, default='sts-b', choices=['sts-b'])
     parser.add_argument('--learning-rate', type=float, default=5e-4)
     parser.add_argument('--logger-endpoint', type=str, default='http://0.0.0.0:8080/submit')
