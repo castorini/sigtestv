@@ -45,14 +45,17 @@ class RunCollection(object):
             collection = collection.filter_by_option(option_name, option_value)
         return collection
 
-    def extract_results(self, result_name, set_type):
-        results = []
+    def extract_results(self, result_names, set_type):
+        result_names = set(result_names)
+        rc_results = []
         for run in self.runs:
+            results = []
             for result in run.results:
-                if result.name == result_name and result.set_type == set_type:
-                    results.append((run.run_config, result.value))
-                    break
-        return results
+                if result.name in result_names and result.set_type == set_type:
+                    results.append(result)
+            if len(results) > 0:
+                rc_results.append((run.run_config, results))
+        return rc_results
 
 
 @dataclass
