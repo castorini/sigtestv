@@ -1,10 +1,10 @@
 from pathlib import Path
 import argparse
 
-from tqdm import tqdm
+import numpy as np
 import pandas as pd
 
-from sigtestv.stats import ResultPopulationPair, ResultPopulationSingle, StudentsTTest, ASDTest, MannWhitneyUTest
+from sigtestv.stats import ResultPopulationPair, ResultPopulationSingle, StudentsTTest, ASDTest, MannWhitneyUTest, SDBootstrapTest
 
 
 def main():
@@ -28,7 +28,8 @@ def main():
     ttest = StudentsTTest(dict(equal_var=False))
     asd_test = ASDTest(dict(threshold=args.asd_threshold))
     mwu_test = MannWhitneyUTest()
-    tests = (ttest, asd_test, mwu_test)
+    bs_test = SDBootstrapTest()
+    tests = (ttest, asd_test, mwu_test, bs_test)
 
     pop_x = pd.read_csv(args.files[0], sep='\t', quoting=3)[args.result_column_name]
     if args.test == 'power':

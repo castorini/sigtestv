@@ -30,7 +30,7 @@ class StudentsTTest(TwoSampleHypothesisTest):
 
     @property
     def name(self):
-        if self.options.get('unequal_var'):
+        if not self.options.get('equal_var'):
             return 'Welch\'s t-test'
         else:
             return 't-test'
@@ -38,6 +38,29 @@ class StudentsTTest(TwoSampleHypothesisTest):
     def test(self, sample1: np.ndarray, sample2: np.ndarray, alpha=0.05):
         t, p = stats.ttest_ind(sample1, sample2, **self.options)
         return p / 2 < alpha and t < 0, t, p
+
+
+@dataclass(frozen=True)
+class SDBootstrapTest(TwoSampleHypothesisTest):
+
+    @property
+    def name(self):
+        return 'Stochastic Dominance Bootstrap'
+
+    def test(self, sample1: np.ndarray, sample2: np.ndarray, alpha=0.05):
+        iters = self.options.get('iters', 1000)
+        gt = compute_pr_x_ge_y(sample1, sample2)
+        sample = np.concatenate((sample1, sample2))
+        n = len(sample1)
+        stats = []
+        for _ in range(iters):
+            np.random.shuffle(sample)
+            sample1 = sample[:n]
+            sample2 = sample[n:]
+            stats.append(compute_pr_x_ge_y(sample1, sample2))
+        p = np.sum(np.array(stats) < gt) / iters
+        return p < alpha, p, p
+
 
 
 @dataclass(frozen=True)
