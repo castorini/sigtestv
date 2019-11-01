@@ -5,6 +5,7 @@ from scipy import stats
 import numpy as np
 
 from .utils import compute_pr_x_ge_y
+from .tables import MANN_WHITNEY_UP010
 
 
 @dataclass(frozen=True)
@@ -58,9 +59,8 @@ class SDBootstrapTest(TwoSampleHypothesisTest):
             sample1 = sample[:n]
             sample2 = sample[n:]
             stats.append(compute_pr_x_ge_y(sample1, sample2))
-        p = np.sum(np.array(stats) < gt) / iters
+        p = np.mean(np.array(stats) <= gt)
         return p < alpha, p, p
-
 
 
 @dataclass(frozen=True)
@@ -74,9 +74,30 @@ class MannWhitneyUTest(TwoSampleHypothesisTest):
         if 'alternative' not in self.options:
             self.options['alternative'] = 'less'
 
+    def exact_test(self, s1, s2):
+        s1 = [(x, 0) for x in s1]
+        s2 = [(x, 1) for x in s2]
+        n = len(s1)
+        m = len(s2)
+        s = sorted(s1 + s2)
+        ranksum1 = 0
+        ranksum2 = 0
+        for rank, (x, l) in enumerate(s):
+            if l == 1:
+                ranksum2 += rank + 1
+            else:
+                ranksum1 += rank + 1
+        U1 = (n * m) + (n * (n + 1)) / 2 - ranksum1
+        U2 = (n * m) + (m * (m + 1)) / 2 - ranksum2
+        U = min(U1, U2)
+        return U, 0.05 if U < MANN_WHITNEY_UP010[n - 1][m - 1] else 0.051
+
     def test(self, sample1: np.ndarray, sample2: np.ndarray, alpha=0.05):
-        U, p = stats.mannwhitneyu(sample1, sample2, **self.options)
-        return p < alpha, U, p
+        if len(sample1) <= 20 or len(sample2) <= 20:
+            U, p = self.exact_test(sample1, sample2)
+        else:
+            U, p = stats.mannwhitneyu(sample1, sample2, **self.options)
+        return p <= alpha, U, p
 
 
 @dataclass(frozen=True)
