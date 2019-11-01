@@ -82,15 +82,28 @@ class MannWhitneyUTest(TwoSampleHypothesisTest):
         s = sorted(s1 + s2)
         ranksum1 = 0
         ranksum2 = 0
+        tmp_ranksum = 0
+        n_ranksum = 0
+        counts = [0, 0]
+        last_x = -1000000
         for rank, (x, l) in enumerate(s):
-            if l == 1:
-                ranksum2 += rank + 1
-            else:
-                ranksum1 += rank + 1
+            if x != last_x and n_ranksum > 0:
+                ranksum1 += (tmp_ranksum / n_ranksum) * counts[0]
+                ranksum2 += (tmp_ranksum / n_ranksum) * counts[1]
+                tmp_ranksum = 0
+                n_ranksum = 0
+                counts = [0, 0]
+            counts[l] += 1
+            tmp_ranksum += rank + 1
+            n_ranksum += 1
+            last_x = x
+        if n_ranksum > 0:
+            ranksum1 += (tmp_ranksum / n_ranksum) * counts[0]
+            ranksum2 += (tmp_ranksum / n_ranksum) * counts[1]
         U1 = (n * m) + (n * (n + 1)) / 2 - ranksum1
         U2 = (n * m) + (m * (m + 1)) / 2 - ranksum2
         U = min(U1, U2)
-        return U, 0.05 if U < MANN_WHITNEY_UP010[n - 1][m - 1] else 0.051
+        return U, 0.05 if U <= MANN_WHITNEY_UP010[n - 1][m - 1] and ranksum1 < ranksum2 else 0.051
 
     def test(self, sample1: np.ndarray, sample2: np.ndarray, alpha=0.05):
         if len(sample1) <= 20 or len(sample2) <= 20:

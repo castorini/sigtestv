@@ -1,4 +1,5 @@
 cherrypy
 dataclasses
+jiant
 pandas
 tqdm
