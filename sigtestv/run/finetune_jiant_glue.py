@@ -30,7 +30,9 @@ def main():
     parser.add_argument('--base-command', '-bc', type=str, default='python -m jiant')
     parser.add_argument('--cuda-no', type=int, default=0)
     parser.add_argument('--lr', type=float, default=5e-4)
-    parser.add_argument('--task-name', type=str, default='sts-b', choices=['sts-b'])
+    parser.add_argument('--patience', type=int, default=3)
+    parser.add_argument('--transfer-nonstatic', action='store_true')
+    parser.add_argument('--task-name', type=str, default='sts-b', choices=['sts-b', 'sst'])
     args = parser.parse_args()
 
     env = os.environ.copy()
@@ -45,7 +47,9 @@ def main():
                                  cuda=args.cuda_no,
                                  lr=args.lr,
                                  run_name=args.run_name,
-                                 target_tasks=args.task_name)
+                                 target_tasks=args.task_name,
+                                 patience=args.patience,
+                                 transfer_paradigm='finetune' if args.transfer_nonstatic else 'frozen')
         f.write(cfg.encode())
         f.flush()
         command = f'{args.base_command} --config_file {f.name}'

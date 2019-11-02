@@ -54,10 +54,9 @@ class ResultPopulationSingle(object):
 
         counter = Counter()
         for _ in trange(iters, disable=not use_tqdm):
-            sx1 = np.random.choice(self.pop, n, replace=False)
-            sx2 = np.random.choice(self.pop, n, replace=False)
-
             for test in tests:
+                sx1 = np.random.choice(self.pop, n, replace=False)
+                sx2 = np.random.choice(self.pop, n, replace=False)
                 reject, stat, p = test.test(sx1, sx2, alpha=alpha)
                 counter[test.name] += int(reject)
         return {k: v / iters for k, v in counter.items()}
