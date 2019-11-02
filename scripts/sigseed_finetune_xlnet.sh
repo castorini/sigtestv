@@ -1,0 +1,11 @@
+python -m sigtestv.run.sigseed_finetune_glue \
+    --model-type xlnet \
+    --seed-iter 1000 \
+    --log-file xlnet-$1.jsonl\
+    --model-name-or-path xlnet-base-cased \
+    --task-name STS-B \
+    --data-dir=/mnt/hdd/glue  \
+    --output-dir=/mnt/hdd/run \
+    --max-steps=1200  \
+    --warmup-steps=120 \
+    --learning-rate 5e-5
