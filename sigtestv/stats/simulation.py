@@ -1,12 +1,23 @@
 from collections import Counter
 from dataclasses import dataclass
-from typing import Sequence
+from typing import Sequence, Callable, Tuple
 
 from tqdm import trange
 import numpy as np
 
 from .test import TwoSampleHypothesisTest
 from .utils import compute_pr_x_ge_y
+
+
+BinaryOrderingFn = Callable[[np.ndarray, np.ndarray], float]
+
+
+def order_stochastic(d1, d2):
+    return compute_pr_x_ge_y(d1, d2) - 0.5
+
+
+def order_quantile(d1, d2, quantile=0.5):
+    return np.quantile(d1, quantile) - np.quantile(d2, quantile)
 
 
 @dataclass
@@ -17,18 +28,13 @@ class ResultPopulationPair(object):
     def compute_pr_x_ge_y(self):
         return compute_pr_x_ge_y(self.pop_x, self.pop_y)
 
-    @property
-    def ordered_pops(self):
-        if self.compute_pr_x_ge_y() > 0.5:
-            pop_big = self.pop_x
-            pop_small = self.pop_y
-        else:
-            pop_small = self.pop_x
-            pop_big = self.pop_y
-        return pop_small, pop_big
-
-    def simulate_statistical_power(self, n1, tests: Sequence[TwoSampleHypothesisTest], use_tqdm=False, **kwargs):
-        pop_small, pop_big = self.ordered_pops
+    def simulate_statistical_power(self,
+                                   n1,
+                                   tests: Sequence[TwoSampleHypothesisTest],
+                                   use_tqdm=False,
+                                   order_fn: BinaryOrderingFn = order_stochastic,
+                                   **kwargs):
+        pop_small, pop_big = (self.pop_x, self.pop_y) if order_fn(self.pop_x, self.pop_y) <= 0 else (self.pop_y, self.pop_x)
         iters = kwargs.get('iters', 500)
         alpha = kwargs.get('alpha', 0.05)
         n2 = kwargs.get('n2', n1)

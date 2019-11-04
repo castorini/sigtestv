@@ -4,6 +4,7 @@ from typing import Any, Dict
 from scipy import stats
 import numpy as np
 
+from .estimator import QuantileEstimator
 from .utils import compute_pr_x_ge_y
 from .tables import MANN_WHITNEY_UP010
 
@@ -111,6 +112,45 @@ class MannWhitneyUTest(TwoSampleHypothesisTest):
         else:
             U, p = stats.mannwhitneyu(sample1, sample2, **self.options)
         return p <= alpha, U, p
+
+
+@dataclass(frozen=True)
+class QuantileTest(TwoSampleHypothesisTest):
+
+    def __post_init__(self):
+        if 'quantile' not in self.options:
+            self.options['quantile'] = 0.5
+        if 'bootstrap_samples' not in self.options:
+            self.options['bootstrap_samples'] = 2000
+        if 'estimate_method' not in self.options:
+            self.options['estimate_method'] = 'harrelldavis'
+        if 'alternative' not in self.options:
+            self.options['alternative'] = 'less'
+
+    @property
+    def name(self):
+        if self.options['estimate_method'] == 'harrelldavis':
+            return 'Harrell-Davis quantile test'
+        if self.options['estimate_method'] == 'direct':
+            return 'Direct quantile test'
+
+    def test(self, sample1: np.ndarray, sample2: np.ndarray, alpha=0.05):
+        test = QuantileEstimator(dict(estimate_method=self.options['estimate_method'],
+                                      quantile=self.options['quantile']))
+        dstar_arr = []
+        b = self.options['bootstrap_samples']
+        for _ in range(b):
+            sx = test.estimate_point(np.random.choice(sample1, len(sample1)))
+            sy = test.estimate_point(np.random.choice(sample2, len(sample2)))
+            dstar_arr.append(sx - sy)
+        dstar_arr = np.array(dstar_arr)
+        pstar = (sum(dstar_arr < 0) + 0.5 * sum(dstar_arr == 0)) / b
+        if self.options['alternative'] == 'less':
+            p = 1 - pstar
+            p /= 2
+        elif self.options['alternative'] == 'both':
+            p = 2 * min(pstar, 1 - pstar)
+        return p < alpha, pstar, p
 
 
 @dataclass(frozen=True)
