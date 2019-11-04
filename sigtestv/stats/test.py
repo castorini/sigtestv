@@ -147,7 +147,6 @@ class QuantileTest(TwoSampleHypothesisTest):
         pstar = (sum(dstar_arr < 0) + 0.5 * sum(dstar_arr == 0)) / b
         if self.options['alternative'] == 'less':
             p = 1 - pstar
-            p /= 2
         elif self.options['alternative'] == 'both':
             p = 2 * min(pstar, 1 - pstar)
         return p < alpha, pstar, p
