@@ -30,10 +30,17 @@ class Estimator(object):
 
 
 @lru_cache(maxsize=1000)
-def beta_cdf_linspace(a, b, n):
-    inds = np.linspace(0, 1, n + 1)
+def beta_cdf_linspace(a, b, n, pow=1):
+    inds = np.linspace(0, 1, n + 1) ** pow
     cdfs = beta(a, b).cdf(inds)
     return cdfs[1:] - cdfs[:-1]
+
+
+def harrelldavis_estimate(sample, q, pow=1):
+    n = len(sample)
+    a = (n + 1) * q
+    b = (n + 1) * (1 - q)
+    return np.sum(beta_cdf_linspace(a, b, n, pow=pow) * np.sort(sample))
 
 
 @lru_cache(maxsize=1000)
@@ -61,10 +68,7 @@ class QuantileEstimator(Estimator):
     def estimate_point(self, sample: np.ndarray):
         q = self.options['quantile']
         if self.options['estimate_method'] == 'harrelldavis':
-            n = len(sample)
-            a = (n + 1) * q
-            b = (n + 1) * (1 - q)
-            return np.sum(beta_cdf_linspace(a, b, n) * np.sort(sample))
+            return harrelldavis_estimate(sample, q)
         elif self.options['estimate_method'] == 'direct':
             return np.quantile(sample, q)
 
