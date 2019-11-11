@@ -5,7 +5,7 @@ from typing import Any, Dict
 from scipy.stats import beta
 import numpy as np
 
-from sigtestv.utils import id_wrap
+from .utils import ecdf
 
 
 @dataclass(frozen=True)
@@ -40,7 +40,9 @@ def harrelldavis_estimate(sample, q, pow=1):
     n = len(sample)
     a = (n + 1) * q
     b = (n + 1) * (1 - q)
-    return np.sum(beta_cdf_linspace(a, b, n, pow=pow) * np.sort(sample))
+    cdf_diff = beta_cdf_linspace(a, b, n, pow=pow)
+    sample = np.sort(sample)
+    return np.sum(cdf_diff * sample)
 
 
 @lru_cache(maxsize=1000)
@@ -60,6 +62,8 @@ class QuantileEstimator(Estimator):
             self.options['ci_samples'] = 1000
         if 'estimate_method' not in self.options:
             self.options['estimate_method'] = 'harrelldavis'
+        if 'discrete' not in self.options:
+            self.options['discrete'] = False
 
     @property
     def name(self):
@@ -68,7 +72,7 @@ class QuantileEstimator(Estimator):
     def estimate_point(self, sample: np.ndarray):
         q = self.options['quantile']
         if self.options['estimate_method'] == 'harrelldavis':
-            return harrelldavis_estimate(sample, q)
+            return harrelldavis_estimate(sample, q, discrete=self.options['discrete'])
         elif self.options['estimate_method'] == 'direct':
             return np.quantile(sample, q)
 
