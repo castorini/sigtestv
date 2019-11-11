@@ -5,7 +5,7 @@ from typing import Any, Dict
 from scipy.stats import beta
 import numpy as np
 
-from .utils import ecdf
+from .ci import bootstrap_ci
 
 
 @dataclass(frozen=True)
@@ -77,8 +77,8 @@ class QuantileEstimator(Estimator):
             return np.quantile(sample, q)
 
     def estimate_interval(self, sample, alpha=0.05):
-        est = self.estimate_point(sample)
-        b = self.options['ci_samples']
-        bs_estimates = [np.random.choice(sample, len(sample)) for _ in range(b)]
-        qa1, qa2 = np.quantile(bs_estimates, (alpha / 2, 1 - alpha / 2))
-        return est, (qa1, qa2)
+        return bootstrap_ci(sample,
+                            self.estimate_point,
+                            alpha=alpha,
+                            method=self.options['ci_method'],
+                            ci_samples=self.options['ci_samples'])

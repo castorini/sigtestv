@@ -1,8 +1,8 @@
 from dataclasses import dataclass
 
-from scipy import stats
 import numpy as np
 
+from .ci import bootstrap_ci
 from .estimator import Estimator, harrelldavis_estimate
 from .utils import ecdf
 
@@ -21,24 +21,18 @@ class MeanMaxEstimator(Estimator):
         return 'MeanMax estimator'
 
     def estimate_point(self, sample: np.ndarray):
-        n = len(sample)
+        n = self.options.get('n', len(sample))
         sample = np.sort(sample)
         cdf, _ = ecdf(sample)
         less_cdf, sample = ecdf(sample, equality=False)
         return np.sum(sample * (cdf ** n - less_cdf ** n))
 
     def estimate_interval(self, sample, alpha=0.05):
-        est = self.estimate_point(sample)
-        b = self.options['ci_samples']
-        bs_estimates = [self.estimate_point(np.random.choice(sample, len(sample))) for _ in range(b)]
-        if self.options['ci_method'] == 'percentile-bootstrap':
-            qa1, qa2 = np.quantile(bs_estimates, (alpha / 2, 1 - alpha / 2))
-        elif self.options['ci_method'] == 'reverse-bootstrap':
-            qa1, qa2 = np.quantile(bs_estimates, (alpha / 2, 1 - alpha / 2))
-            tmp = qa1
-            qa1 = 2 * est - qa2
-            qa2 = 2 * est - tmp
-        return est, (qa1, qa2)
+        return bootstrap_ci(sample,
+                            self.estimate_point,
+                            alpha=alpha,
+                            method=self.options['ci_method'],
+                            ci_samples=self.options['ci_samples'])
 
 
 @dataclass(frozen=True)
@@ -60,15 +54,15 @@ class QuantileMaxEstimator(Estimator):
 
     def estimate_point(self, sample: np.ndarray):
         q = self.options['quantile']
-        n = len(sample)
+        n = self.options.get('n', len(sample))
         if self.options['estimate_method'] == 'harrelldavis':
             return harrelldavis_estimate(sample, q, pow=n)
         if self.options['estimate_method'] == 'direct':
             return np.quantile(sample, q ** (1 / n))
 
     def estimate_interval(self, sample, alpha=0.05):
-        est = self.estimate_point(sample)
-        b = self.options['ci_samples']
-        bs_estimates = [self.estimate_point(np.random.choice(sample, len(sample))) for _ in range(b)]
-        qa1, qa2 = np.quantile(bs_estimates, (alpha / 2, 1 - alpha / 2))
-        return est, (qa1, qa2)
+        return bootstrap_ci(sample,
+                            self.estimate_point,
+                            alpha=alpha,
+                            method=self.options['ci_method'],
+                            ci_samples=self.options['ci_samples'])
