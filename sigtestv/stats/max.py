@@ -58,7 +58,7 @@ class QuantileMaxEstimator(Estimator):
         if self.options['estimate_method'] == 'harrelldavis':
             return harrelldavis_estimate(sample, q, pow=n)
         if self.options['estimate_method'] == 'direct':
-            return np.quantile(sample, q ** (1 / n))
+            return np.quantile(sample, q ** (1 / n), interpolation='nearest')
 
     def estimate_interval(self, sample, alpha=0.05):
         return bootstrap_ci(sample,
