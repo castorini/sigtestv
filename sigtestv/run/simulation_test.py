@@ -6,14 +6,20 @@ from scipy import stats
 from tqdm import trange
 import numpy as np
 
+from sigtestv.stats import MeanMaxEstimator
+
 
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('--sample-size', '-s', type=int, default=50)
+    parser.add_argument('--subsample-size', '-k', type=int, default=None)
     parser.add_argument('--num-iters', '-n', type=int, default=10000)
     parser.add_argument('--dataset-size', '-dsz', type=int, default=67000)
     parser.add_argument('--cache1', type=str)
     args = parser.parse_args()
+
+    if args.subsample_size is None:
+        args.subsample_size = args.sample_size
 
     N = args.dataset_size
     xs = np.linspace(0, 1, N)
@@ -25,21 +31,12 @@ def main():
     plt.hist(gen_fn(size=10000), bins=100)
     plt.show()
 
+    estimator = MeanMaxEstimator(dict(n=args.subsample_size))
     gt_distn = []
-    bypass = False
-    if args.cache1:
-        try:
-            gt_distn = np.load(args.cache1)
-            bypass = True
-        except FileNotFoundError:
-            pass
-    if not bypass:
-        for _ in trange(args.num_iters // 100):
-            x = gen_fn(size=(args.num_iters, args.sample_size, 100))
-            gt_distn.extend(np.mean(np.max(x, axis=1), axis=0).tolist())
+    for _ in trange(args.num_iters):
+        x = estimator.estimate_point(gen_fn(size=args.sample_size))
+        gt_distn.append(x)
     gt_distn = np.array(gt_distn)
-    if args.cache1:
-        np.save(args.cache1, gt_distn)
     mu = np.mean(gt_distn)
     plt.hist(gt_distn, bins=100)
     plt.axvline(mu, color='r')
@@ -47,10 +44,10 @@ def main():
 
     exp_maximums_ss = []
     fig, ax = plt.subplots()
-    x = gen_fn(size=int(10 * args.sample_size))
-    for _ in trange(args.num_iters // 100):
-        samples = np.random.choice(x, (args.num_iters, args.sample_size, 100), replace=True)
-        exp_maximums_ss.extend(np.mean(np.max(samples, axis=1), axis=0))
+    x = gen_fn(size=int((0.5 * args.sample_size) ** 2))
+    for _ in trange(args.num_iters):
+        sample = np.random.choice(x, args.sample_size, replace=False)
+        exp_maximums_ss.append(estimator.estimate_point(sample))
     a, b = np.quantile(exp_maximums_ss, (0.025, 0.975))
     ax.hist([gt_distn, exp_maximums_ss], bins=100, label=['Truth', 'Subsampling'])
     ax.legend()
@@ -62,9 +59,10 @@ def main():
     fig, ax = plt.subplots()
     exp_maximums_bs = []
     x = x[:args.sample_size]
-    for _ in trange(args.num_iters // 100):
-        samples = np.random.choice(x, (args.num_iters, args.sample_size, 100), replace=True)
-        exp_maximums_bs.extend(np.mean(np.max(samples, axis=1), axis=0))
+    x = gen_fn(size=args.sample_size)
+    for _ in trange(args.num_iters):
+        sample = np.random.choice(x, args.sample_size, replace=True)
+        exp_maximums_bs.append(estimator.estimate_point(sample))
     ax.hist([gt_distn, exp_maximums_ss, exp_maximums_bs], bins=100, label=['Truth', 'Subsampling', 'Bootstrap'])
     ax.legend()
     plt.show()
