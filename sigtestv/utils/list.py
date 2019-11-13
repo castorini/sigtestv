@@ -1,6 +1,8 @@
 import math
 import random
 
+import numpy as np
+
 
 def split(lst, size):
     for idx in range(0, len(lst), size):
