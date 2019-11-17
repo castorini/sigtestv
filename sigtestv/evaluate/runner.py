@@ -1,10 +1,16 @@
 from dataclasses import dataclass
 from typing import Dict
+import enum
 import io
 import subprocess
 import os
 
 from .pipeline import PipelineComponent, EvaluationPipeline
+
+
+class PassTypeEnum(enum.Enum):
+    CLI = 'cli'
+    ENV = 'env'
 
 
 class BoolSetExpression(object):
