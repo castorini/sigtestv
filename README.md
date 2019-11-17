@@ -1,2 +1,2 @@
 # sigtestv
-Random seeds and their implications for neural networks.
+SIGnificance TESTing Violations: an end-to-end toolkit for evaluating neural networks.
