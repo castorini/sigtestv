@@ -13,6 +13,14 @@ def compute_pr_x_ge_y(x, y):
     return np.sum(results) / (len(x) * len(y))
 
 
+def pos_mean_ecdf(cdf, sample):
+    cdf1 = 1 - cdf
+    min_sample = sample[0]
+    a = min_sample
+    delta = sample[1:] - sample[:-1]
+    return a + np.sum(cdf1[:-1] * delta)
+
+
 def ecdf(sample: np.ndarray,
          equality=True,
          sorted=True,
