@@ -76,8 +76,9 @@ class RunConfiguration(object):
 
 class SubprocessRunner(PipelineComponent):
 
-    def __init__(self, line_write_callback=None):
+    def __init__(self, line_write_callback=None, capture_stderr=False):
         self.line_write_cb = line_write_callback
+        self.capture_stderr = capture_stderr
 
     def __call__(self, run_config):
         command_args = [run_config.command_base]
@@ -85,11 +86,13 @@ class SubprocessRunner(PipelineComponent):
         for k, v in run_config.options.items():
             command_args.append(k)
             if v: command_args.append(v)
+        stderr_opt = dict(stderr=subprocess.STDOUT) if self.capture_stderr else {}
         result = subprocess.Popen(' '.join(command_args),
                                   shell=True,
                                   env=run_config.env_vars,
                                   stdout=subprocess.PIPE,
-                                  bufsize=0)
+                                  bufsize=0,
+                                  **stderr_opt)
         for line in iter(result.stdout.readline, b''):
             line = line.decode()
             sio.write(line)

@@ -52,6 +52,20 @@ class BiRNNExtractor(PipelineComponent):
         return bexpr(self.output_dir_key)
 
 
+class HedwigExtractor(PipelineComponent):
+
+    def __call__(self, config: RunConfiguration, stdout: str):
+        def extract_results(line1, line2, line3):
+            set_type = line1.split('for ')[-1]
+            metric_names = eval(line2)
+            results = eval(line3)
+            return [ExperimentResult(float(value), name, set_type) for value, name in zip(results, metric_names)]
+        lines = stdout.splitlines()[-6:]
+        dev_lines = lines[:3]
+        test_lines = lines[3:]
+        return extract_results(*dev_lines) + extract_results(*test_lines)
+
+
 class JiantExtractor(PipelineComponent):
 
     def __init__(self, set_type=SetTypeEnum.DEV):

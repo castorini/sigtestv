@@ -4,6 +4,7 @@ from typing import Sequence, Any
 import json
 import os
 
+import numpy as np
 import scipy.stats as stats
 
 from .runner import ConfigGenerator, PassTypeEnum
@@ -35,12 +36,16 @@ class SearchConfiguration(object):
                 del attr_dict['pass_type']
             except KeyError:
                 pass_types.append(PassTypeEnum.CLI.value)
-                pass
-            sampling_fn = attr_dict['sampling_fn']
-            del attr_dict['sampling_fn']
 
-            sampling_fn = getattr(stats, sampling_fn).rvs
-            sampling_fn = partial(sampling_fn, **attr_dict)
+            try:
+                sampling_fn = attr_dict['sampling_fn']
+                del attr_dict['sampling_fn']
+                sampling_fn = getattr(stats, sampling_fn).rvs
+                sampling_fn = partial(sampling_fn, **attr_dict)
+            except (KeyError, AttributeError):
+                choices = attr_dict['choices']
+                del attr_dict['choices']
+                sampling_fn = partial(np.random.choice, choices, **attr_dict)
             sample_functions.append(sampling_fn)
         return cls(names, sample_functions, pass_types)
 
@@ -70,9 +75,9 @@ class RandomSearchGenerator(ConfigGenerator):
     def __iter__(self):
         for _ in range(self.total):
             env = os.environ.copy()
-            format_str = self.base_config.options[self.format_opt]
+            format_str = self.base_config.options.get(self.format_opt, '')
             attr_samples = self.search_config.sample()
-            attr_dict = {name: value for name, value, _ in attr_samples}
+            attr_dict = {attr_sample.name: attr_sample.value for attr_sample in attr_samples}
 
             for attr_sample in attr_samples:
                 pass_type = attr_sample.pass_type

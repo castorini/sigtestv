@@ -29,7 +29,7 @@ def main():
     probs = probs / probs.sum()
     gen_fn = partial(np.random.choice, xs, p=probs)
     plt.hist(gen_fn(size=10000), bins=100)
-    plt.show()
+    # plt.show()
 
     estimator = MeanMaxEstimator(dict(n=args.subsample_size))
     gt_distn = []
@@ -40,11 +40,11 @@ def main():
     mu = np.mean(gt_distn)
     plt.hist(gt_distn, bins=100)
     plt.axvline(mu, color='r')
-    plt.show()
+    # plt.show()
 
     exp_maximums_ss = []
     fig, ax = plt.subplots()
-    x = gen_fn(size=int((0.5 * args.sample_size) ** 2))
+    x = gen_fn(size=10 * args.sample_size)
     for _ in trange(args.num_iters):
         sample = np.random.choice(x, args.sample_size, replace=False)
         exp_maximums_ss.append(estimator.estimate_point(sample))
@@ -54,7 +54,7 @@ def main():
     plt.axvline(mu, color='r')
     plt.axvline(a)
     plt.axvline(b)
-    plt.show()
+    # plt.show()
 
     fig, ax = plt.subplots()
     exp_maximums_bs = []
