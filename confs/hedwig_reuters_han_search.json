@@ -1,8 +1,7 @@
 [
   {
     "name": "--mode",
-    "choices": ["multichannel", "non-static", "static"],
-    "p": [0.5, 0.25, 0.25]
+    "choices": ["static", "non-static"]
   }, {
     "name": "--batch-size",
     "choices": [16, 32, 64]
@@ -22,9 +21,14 @@
     "loc": 0.05,
     "scale": 0.65
   }, {
-    "name": "--output-channel",
+    "name": "--word-num-hidden",
     "sampling_fn": "randint",
-    "low": 75,
-    "high": 200
+    "low": 32,
+    "high": 128
+  }, {
+    "name": "--sentence-num-hidden",
+    "sampling_fn": "randint",
+    "low": 32,
+    "high": 128
   }
 ]

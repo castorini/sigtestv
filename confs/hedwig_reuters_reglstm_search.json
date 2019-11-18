@@ -26,11 +26,6 @@
     "choices": [1, 2],
     "p": [0.75, 0.25]
   }, {
-    "name": "--weight-decay",
-    "sampling_fn": "uniform",
-    "loc": 0,
-    "scale": 5e-4
-  }, {
     "name": "--hidden-dim",
     "sampling_fn": "randint",
     "low": 384,
