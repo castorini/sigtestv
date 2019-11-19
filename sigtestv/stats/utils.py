@@ -42,6 +42,10 @@ def ecdf(sample: np.ndarray,
     return np.unique(cdf), np.unique(sample)
 
 
+def compute_minimum_sample_power(max_p, alpha=0.95):
+    return np.log(1 - alpha) / np.log(1 - max_p)
+
+
 if __name__ == '__main__':
     S = np.array([0.1, 0.2, 0.3, 0.4, 0.4, 0.4, 0.4])
     n = len(S)

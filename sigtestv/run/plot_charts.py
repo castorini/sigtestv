@@ -1,62 +1,84 @@
+from collections import defaultdict
 from pathlib import Path
 import argparse
+import json
 
-from scipy import stats
 from matplotlib import pyplot as plt
 import numpy as np
+import pandas as pd
 
-from sigtestv.stats import QuantileMaxEstimator, MeanMaxEstimator, harrelldavis_estimate, pos_mean_ecdf, ecdf, compute_ecdf_ci_bands
+from sigtestv.stats import MeanMaxEstimator, QuantileMaxEstimator
+
+
+def plot_max(ax,
+             name,
+             results,
+             scale_factor=1,
+             total=None,
+             plot_type='all',
+             **estimator_kwargs):
+    if total is None:
+        total = len(results)
+    y = []
+    p10 = []
+    p50 = []
+    estimator_kwargs['quantile'] = 0.1
+    for idx in range(total):
+        estimator_kwargs['n'] = idx + 1
+        mme = MeanMaxEstimator(options=estimator_kwargs)
+        options = estimator_kwargs.copy()
+        options['quantile'] = 0.1
+        qme10 = QuantileMaxEstimator(options=options)
+        options = estimator_kwargs.copy()
+        options['quantile'] = 0.5
+        qme50 = QuantileMaxEstimator(options=options)
+
+        y.append(mme.estimate_point(results))
+        p10.append(qme10.estimate_point(results))
+        p50.append(qme50.estimate_point(results))
+    x = scale_factor * (np.arange(total) + 1)
+    if plot_type == 'all':
+        ax.fill_between(x, p10, p50, alpha=0.5)
+    elif plot_type == 'mean':
+        ax.plot(x, y, label=name)
+    elif plot_type == 'p10':
+        ax.plot(x, p10, label=name)
+        y = p10
+    elif plot_type == 'p50':
+        ax.plot(x, p50, label=name)
+        y = p50
+    ax.annotate(f'{max(y):.4f}', (max(x) - max(x) // 10, max(y)))
 
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument('--data-file', '-d', type=Path, required=True)
+    parser.add_argument('--dataset-file', '-d', type=Path, required=True)
     parser.add_argument('--column', '-c', type=str, required=True)
-    # parser.add_argument('--')
+    parser.add_argument('--model-name-column', type=str, default='model_name')
+    parser.add_argument('--scale-factors', type=json.loads)
+    parser.add_argument('--total', '-n', type=int)
+    parser.add_argument('--plot-type', '-pt', type=str, default='all', choices=['all', 'p50', 'p10', 'mean'])
+    parser.add_argument('--xlabel', '-xl', type=str, default='# Tuning Trials')
+    parser.add_argument('--filter-models', '-fm', type=str, nargs='+')
+    args = parser.parse_args()
+
+    column_name = args.column
+    df = pd.read_csv(args.dataset_file, sep='\t', quoting=3)
+    fig, ax = plt.subplots()
+    scale_factors = defaultdict(lambda: 1)
+    if args.scale_factors is not None:
+        scale_factors.update(args.scale_factors)
+    for name, group in df.groupby('model_name'):
+        if args.filter_models and name not in args.filter_models:
+            continue
+        results = np.sort(np.array(list(group[column_name])[:args.total]))
+        plot_max(ax, name, results, scale_factor=scale_factors[name], total=args.total, plot_type=args.plot_type)
+    plt.legend()
+    plt.xlabel(args.xlabel)
+    plt.ylabel('Expected Maximum Dev F1')
+    plt.title('Model Comparison')
+    plt.show()
 
 
 if __name__ == '__main__':
     main()
-
-    # sample = [1, 1, 1, 2, 3, 4, 4, 4, 5, 6, 7, 15, 20, 30, 40, 50, 80, 90, 92, 92, 93, 93, 94, 94, 95, 95]#, 98]
-    fig, ax = plt.subplots()
-    for _ in range(1):
-        sample = np.clip(stats.norm.rvs(loc=80, scale=2, size=100), 0, np.inf)
-        # sample = np.array(sample)
-        # sample = np.concatenate((sample, sample + stats.binom.rvs(5, 0.5, size=len(sample))))
-        # sample = np.concatenate((sample, sample + stats.binom.rvs(5, 0.5, size=len(sample))))
-        sample = np.sort(sample)
-        cdf, _ = ecdf(sample)
-        x = np.linspace(70, 90, 1000)
-        gt = stats.norm.cdf(x, loc=80, scale=2)
-        k = 10
-        cdf = cdf ** k
-        (lecdf, uecdf), sample = compute_ecdf_ci_bands(sample, 0.01, k=k)
-        ax.step(sample, lecdf)
-        ax.step(sample, cdf)
-        ax.step(sample, uecdf)
-        ax.step(x, gt ** k)
-        q = 0.1
-        lines = ([], [], [], [], [])
-        N = 8
-        # for n in range(N):
-        #     n += 1
-        #     qme = QuantileMaxEstimator(dict(quantile=q, n=n, estimate_method='harrelldavis'))
-        #     qme2 = QuantileMaxEstimator(dict(quantile=q, n=n, estimate_method='direct'))
-        #     mme = MeanMaxEstimator(dict(quantile=q, n=n))
-        #     mme2 = MeanMaxEstimator(dict(quantile=q, n=n, ci_method='percentile-bootstrap'))
-        #     est, (qa1, qa2) = mme.estimate_interval(sample, alpha=0.05)
-        #     _, (qa11, qa12) = mme2.estimate_interval(sample, alpha=0.05)
-        #     lines[0].append(est)
-        #     lines[1].append(qa1)
-        #     lines[2].append(qa2)
-        #     lines[3].append(qa11)
-        #     lines[4].append(qa12)
-        #
-        # x = np.arange(1, N + 1)
-        # ax.plot(x, lines[0])
-        # ax.fill_between(x, lines[1], lines[2], alpha=0.1, color='red')
-        # ax.fill_between(x, lines[3], lines[4], alpha=0.1, color='orange')
-    # plt.plot(np.vstack((x, x, x)).T, np.array(lines).T)
-    # plt.axhline(y=harrelldavis_estimate(sample, 0.1))
-    plt.show()

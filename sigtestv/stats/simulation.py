@@ -1,5 +1,6 @@
 from collections import Counter
 from dataclasses import dataclass
+from functools import partial
 from typing import Sequence, Callable, Tuple
 
 from tqdm import trange
@@ -10,6 +11,14 @@ from .utils import compute_pr_x_ge_y
 
 
 BinaryOrderingFn = Callable[[np.ndarray, np.ndarray], float]
+
+
+def dfromc_rvs(bins, cdf, **cdf_kwargs):
+    xs = np.linspace(0, 1, bins)
+    cdf_gen = partial(cdf, **cdf_kwargs)
+    probs = cdf_gen(xs + 1 / (2 * bins)) - cdf_gen(xs - 1 / (2 * bins))
+    probs = probs / probs.sum()
+    return partial(np.random.choice, xs, p=probs)
 
 
 def order_stochastic(d1, d2):

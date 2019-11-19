@@ -54,16 +54,29 @@ class BiRNNExtractor(PipelineComponent):
 
 class HedwigExtractor(PipelineComponent):
 
+    def __init__(self, tabular=False):
+        self.tabular = tabular
+
     def __call__(self, config: RunConfiguration, stdout: str):
         def extract_results(line1, line2, line3):
             set_type = line1.split('for ')[-1]
             metric_names = eval(line2)
             results = eval(line3)
             return [ExperimentResult(float(value), name, set_type) for value, name in zip(results, metric_names)]
+
+        def extract_tabular_results(line1, line2):
+            metric_names = re.findall(r'/(\w+)', line1.strip())[1:]
+            results = re.split(r'\s+', line2.strip())
+            set_type = results[0].lower()
+            results = results[1:]
+            return [ExperimentResult(float(value), name.lower(), set_type) for value, name in zip(results, metric_names)]
         lines = stdout.splitlines()[-6:]
         dev_lines = lines[:3]
         test_lines = lines[3:]
-        return extract_results(*dev_lines) + extract_results(*test_lines)
+        if self.tabular:
+            return extract_tabular_results(*dev_lines[1:]) + extract_tabular_results(*test_lines[1:])
+        else:
+            return extract_results(*dev_lines) + extract_results(*test_lines)
 
 
 class JiantExtractor(PipelineComponent):
