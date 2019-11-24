@@ -5,3 +5,4 @@ from .max import *
 from .simulation import *
 from .test import *
 from .utils import *
+from .var_reduce import *

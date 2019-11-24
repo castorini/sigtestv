@@ -1,3 +1,4 @@
+from collections import defaultdict
 from functools import partial
 import argparse
 
@@ -6,7 +7,7 @@ from scipy import stats
 from tqdm import trange
 import numpy as np
 
-from sigtestv.stats import MeanMaxEstimator
+from sigtestv.stats import MeanMaxEstimator, dfromc_rvs, compute_minimum_sample_power, CorrectedMeanMaxEstimator
 
 
 def main():
@@ -15,64 +16,68 @@ def main():
     parser.add_argument('--subsample-size', '-k', type=int, default=None)
     parser.add_argument('--num-iters', '-n', type=int, default=10000)
     parser.add_argument('--dataset-size', '-dsz', type=int, default=67000)
+    parser.add_argument('--action', '-a', type=str, default='trajectory', choices=['trajectory', 'mse', 'ci'])
+    parser.add_argument('--distribution-type', '-dtype', type=str, default='d', choices=['c', 'd', 'continuous', 'discrete'])
     args = parser.parse_args()
 
     if args.subsample_size is None:
         args.subsample_size = args.sample_size
 
-    N = args.dataset_size
-    xs = np.linspace(0, 1, N)
-    c = 16
-    tn_cdf = partial(stats.truncnorm.cdf, scale=0.5 / c, loc=0.5, a=-c, b=c)
-    probs = tn_cdf(xs + 1 / (2 * N)) - tn_cdf(xs - 1 / (2 * N))
-    probs = probs / probs.sum()
-    gen_fn = partial(np.random.choice, xs, p=probs)
-    # plt.hist(gen_fn(size=10000), bins=100)
+    if args.distribution_type.startswith('d'):
+        c = 8
+        cdf_kwargs = dict(scale=0.25 / c, loc=0.5, a=-c, b=c)
+        gen_fn = dfromc_rvs(args.dataset_size, stats.truncnorm.cdf, **cdf_kwargs)
+        gen_fn = dfromc_rvs(args.dataset_size, stats.uniform.cdf)
+    else:
+        gen_fn = partial(stats.norm.rvs, loc=0, scale=1)
+
+    large_N = 10000000
+    pop = gen_fn(size=large_N)
+    estimators = [MeanMaxEstimator(dict(n=args.subsample_size)),
+                  CorrectedMeanMaxEstimator(
+                      dict(n=args.subsample_size, method='subsample', vr_methods=('cv',), cv_method='mme')),
+                  CorrectedMeanMaxEstimator(dict(n=args.subsample_size, method='subsample', vr_methods=('cv', 'av'), cv_method='mme')),
+                  CorrectedMeanMaxEstimator(dict(n=args.subsample_size, method='subsample', vr_methods=('cv'))),
+                  CorrectedMeanMaxEstimator(dict(n=args.subsample_size, method='subsample', vr_methods=('cv', 'av'))),
+                  CorrectedMeanMaxEstimator(dict(n=args.subsample_size, method='subsample', vr_methods=('av',))),
+                  CorrectedMeanMaxEstimator(dict(n=args.subsample_size, method='mean'))]
+    true_parameter = CorrectedMeanMaxEstimator(dict(n=args.subsample_size, method='mean')).estimate_point(pop)
+    # plt.hist(pop, bins=args.dataset_size)
     # plt.show()
-
-    gt_distn = []
     fig, ax = plt.subplots()
-    for _ in trange(args.num_iters):
-
+    if args.action == 'trajectory':
+        for _ in trange(args.num_iters):
+            y = []
+            sample = gen_fn(size=args.sample_size)
+            for n in range(args.subsample_size):
+                n += 1
+                estimator = MeanMaxEstimator(dict(n=n))
+                y.append(estimator.estimate_point(sample))
+            ax.plot(np.arange(args.subsample_size) + 1, y)
+        ax.axhline(true_parameter)
+        plt.show()
+    elif args.action == 'ci':
         y = []
-        sample = gen_fn(size=args.sample_size)
-        for n in range(args.subsample_size):
-            n += 1
-            estimator = MeanMaxEstimator(dict(n=n))
-            y.append(estimator.estimate_point(sample))
-        ax.plot(np.arange(args.subsample_size) + 1, y)
-    plt.show()
-    return
-    # gt_distn = np.array(gt_distn)
-    # mu = np.mean(gt_distn)
-    # plt.hist(gt_distn, bins=100)
-    # plt.axvline(mu, color='r')
-    # plt.show()
-
-    exp_maximums_ss = []
-    fig, ax = plt.subplots()
-    x = gen_fn(size=10 * args.sample_size)
-    for _ in trange(args.num_iters):
-        sample = np.random.choice(x, args.sample_size, replace=False)
-        exp_maximums_ss.append(estimator.estimate_point(sample))
-    a, b = np.quantile(exp_maximums_ss, (0.025, 0.975))
-    ax.hist([gt_distn, exp_maximums_ss], bins=100, label=['Truth', 'Subsampling'])
-    ax.legend()
-    plt.axvline(mu, color='r')
-    plt.axvline(a)
-    plt.axvline(b)
-    # plt.show()
-
-    fig, ax = plt.subplots()
-    exp_maximums_bs = []
-    x = x[:args.sample_size]
-    x = gen_fn(size=args.sample_size)
-    for _ in trange(args.num_iters):
-        sample = np.random.choice(x, args.sample_size, replace=True)
-        exp_maximums_bs.append(estimator.estimate_point(sample))
-    ax.hist([gt_distn, exp_maximums_ss, exp_maximums_bs], bins=100, label=['Truth', 'Subsampling', 'Bootstrap'])
-    ax.legend()
-    plt.show()
+        for _ in trange(args.num_iters):
+            sample = gen_fn(size=args.sample_size)
+            _, (a, b) = MeanMaxEstimator(dict(n=args.subsample_size)).estimate_interval(sample)
+            y.append(int(a <= true_parameter <= b))
+        print(np.mean(y))
+    elif args.action == 'mse':
+        est_data = defaultdict(list)
+        for _ in trange(args.num_iters):
+            sample = gen_fn(size=args.sample_size)
+            for estimator in estimators:
+                est_data[estimator.name].append(estimator.estimate_point(sample))
+        print('Bias')
+        for name, estimates in est_data.items():
+            print(name, np.mean(estimates) - true_parameter)
+        print('Variance')
+        for name, estimates in est_data.items():
+            print(name, np.var(estimates))
+        print('MSE')
+        for name, estimates in est_data.items():
+            print(name, np.mean((np.array(estimates) - true_parameter)**2))
 
 
 if __name__ == '__main__':
