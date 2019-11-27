@@ -27,34 +27,34 @@ def main():
         c = 8
         cdf_kwargs = dict(scale=0.25 / c, loc=0.5, a=-c, b=c)
         gen_fn = dfromc_rvs(args.dataset_size, stats.truncnorm.cdf, **cdf_kwargs)
-        gen_fn = dfromc_rvs(args.dataset_size, stats.uniform.cdf)
+        # gen_fn = dfromc_rvs(args.dataset_size, stats.uniform.cdf)
     else:
         gen_fn = partial(stats.norm.rvs, loc=0, scale=1)
+        gen_fn = partial(stats.uniform.rvs)
+        gen_fn = partial(stats.truncnorm.rvs, a=-3, b=5, scale=0.2, loc=0.5)
 
     large_N = 10000000
     pop = gen_fn(size=large_N)
     estimators = [MeanMaxEstimator(dict(n=args.subsample_size)),
-                  CorrectedMeanMaxEstimator(
-                      dict(n=args.subsample_size, method='subsample', vr_methods=('cv',), cv_method='mme')),
-                  CorrectedMeanMaxEstimator(dict(n=args.subsample_size, method='subsample', vr_methods=('cv', 'av'), cv_method='mme')),
-                  CorrectedMeanMaxEstimator(dict(n=args.subsample_size, method='subsample', vr_methods=('cv'))),
-                  CorrectedMeanMaxEstimator(dict(n=args.subsample_size, method='subsample', vr_methods=('cv', 'av'))),
-                  CorrectedMeanMaxEstimator(dict(n=args.subsample_size, method='subsample', vr_methods=('av',))),
+                  CorrectedMeanMaxEstimator(dict(n=args.subsample_size, method='subsample')),
                   CorrectedMeanMaxEstimator(dict(n=args.subsample_size, method='mean'))]
     true_parameter = CorrectedMeanMaxEstimator(dict(n=args.subsample_size, method='mean')).estimate_point(pop)
-    # plt.hist(pop, bins=args.dataset_size)
-    # plt.show()
+    plt.hist(gen_fn(size=100000), bins=args.dataset_size)
+    plt.show()
     fig, ax = plt.subplots()
     if args.action == 'trajectory':
         for _ in trange(args.num_iters):
-            y = []
+            est_data = defaultdict(list)
             sample = gen_fn(size=args.sample_size)
-            for n in range(args.subsample_size):
+            for n in trange(args.subsample_size, position=1):
                 n += 1
-                estimator = MeanMaxEstimator(dict(n=n))
-                y.append(estimator.estimate_point(sample))
-            ax.plot(np.arange(args.subsample_size) + 1, y)
+                for estimator in estimators:
+                    estimator.options['n'] = n
+                    est_data[estimator.name].append(estimator.estimate_point(sample))
+            for name, y in est_data.items():
+                ax.plot(np.arange(args.subsample_size) + 1, y, label=name)
         ax.axhline(true_parameter)
+        plt.legend()
         plt.show()
     elif args.action == 'ci':
         y = []

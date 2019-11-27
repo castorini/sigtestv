@@ -45,7 +45,8 @@ class MeanMaxEstimator(Estimator):
 
     def estimate_point(self, sample: np.ndarray):
         n = self.options.get('n', len(sample))
-        sample = np.sort(sample)
+        if not self.options.get('sorted'):
+            sample = np.sort(sample)
         cdf, sample = ecdf(sample)
         return pos_mean_ecdf(cdf ** n, sample)
 
@@ -66,6 +67,11 @@ class MeanMaxEstimator(Estimator):
             return est, (qa1, qa2)
 
 
+@lru_cache(maxsize=100000)
+def cached_le_prob(sample: WrappedObject, value):
+    return np.mean(sample.x < value)
+
+
 @dataclass(frozen=True)
 class CorrectedMeanMaxEstimator(Estimator):
 
@@ -82,6 +88,8 @@ class CorrectedMeanMaxEstimator(Estimator):
             self.options['vr_methods'] = []
         if 'cv_method' not in self.options:
             self.options['cv_method'] = 'rank'
+        if 'output_prob' not in self.options:
+            self.options['output_prob'] = False
 
     @property
     def name(self):
@@ -93,41 +101,23 @@ class CorrectedMeanMaxEstimator(Estimator):
         use_cv = 'cv' in self.options['vr_methods']
         use_av = 'av' in self.options['vr_methods']
         cv_rank = self.options['cv_method'] == 'rank'
+        cdf_map = ecdf(sample, sorted=False, equality=False, return_map=True)
         if self.options['method'] == 'mean':
             chunks = np.array_split(sample, len(sample) // n)
             chunks = [chunk[:n] for chunk in chunks]
             return np.mean([np.max(chunk) for chunk in chunks])
         elif self.options['method'] == 'subsample':
             n_samples = self.options['samples']
-            indices = np.arange(len(sample))
-            if use_cv:
-                if cv_rank:
-                    ranks = cached_rankify(id_wrap(sample))
-                    expected_cv = compute_expected_rank(n, len(sample))
-                else:
-                    mme = MeanMaxEstimator(options=dict(n=n))
-                    expected_cv = np.mean([mme.estimate_point(np.random.choice(sample, n, replace=False)) for _ in range(2000)])
-            if n >= len(sample) // 2 or not use_av:
-                rand_inds = [np.random.choice(indices, n, replace=False) for _ in range(n_samples)]
-                samples = np.array([np.max(sample[rand_ind]) for rand_ind in rand_inds])
-                if use_cv:
-                    if cv_rank:
-                        cv_values = np.array([np.max(ranks[rand_ind]) for rand_ind in rand_inds])
-                    else:
-                        cv_values = np.array([mme.estimate_point(sample[rand_ind]) for rand_ind in rand_inds])
-                    samples = cv_adjust(samples, cv_values, expected_cv)
-            else:
-                rand_inds = [np.random.choice(indices, 2 * n, replace=False) for _ in range(n_samples)]
-                samples = np.array([np.max(sample[rand_ind].reshape((2, n)), 1) for rand_ind in rand_inds])
-                if use_cv:
-                    if cv_rank:
-                        cv_values = np.array([np.max(ranks[rand_ind].reshape((2, n)), 1) for rand_ind in rand_inds])
-                    else:
-                        cv_values1 = np.array([mme.estimate_point(sample[rand_ind[:n]]) for rand_ind in rand_inds])
-                        cv_values2 = np.array([mme.estimate_point(sample[rand_ind[n:]]) for rand_ind in rand_inds])
-                        cv_values = np.vstack((cv_values1, cv_values2)).T
-                    samples[:, 0] = cv_adjust(samples[:, 0], cv_values[:, 0], expected_cv)
-                    samples[:, 1] = cv_adjust(samples[:, 1], cv_values[:, 1], expected_cv)
+            samples = np.empty(n_samples)
+            output_prob = self.options['output_prob']
+            if output_prob:
+                probs = np.empty(n_samples)
+            for idx in range(n_samples):
+                samples[idx] = tmax = np.max(np.random.choice(sample, n, replace=False))
+                if output_prob:
+                    probs[idx] = cdf_map[tmax]
+            if output_prob:
+                return np.mean(samples), np.mean(probs)
             return np.mean(samples)
 
     def estimate_interval(self, sample, alpha=0.05):
@@ -171,3 +161,54 @@ class QuantileMaxEstimator(Estimator):
                             alpha=alpha,
                             method=self.options['ci_method'],
                             ci_samples=self.options['ci_samples'])
+
+
+@dataclass(frozen=True)
+class MeanMaxBudgetEstimator(Estimator):
+
+    def __post_init__(self):
+        if 'alpha' not in self.options:
+            self.options['alpha'] = 0.95
+        if 'budget' not in self.options:
+            self.options['budget'] = 1
+        if 'method' not in self.options:
+            self.options['method'] = 'forward'
+        if 'sorted' not in self.options:
+            self.options['sorted'] = False
+        if 'theta_method' not in self.options:
+            self.options['theta_method'] = 'mme'
+
+    @property
+    def name(self):
+        return 'MeanMax Budget Estimator'
+
+    def estimate_point(self, sample: np.ndarray):
+        k = self.options.get('n', len(sample))
+        alpha = self.options['alpha']
+        method = self.options['method']
+        theta_method = self.options['theta_method']
+        le_prob = None
+        if theta_method == 'mme':
+            mme = MeanMaxEstimator(options=dict(n=k))
+        else:
+            mme = CorrectedMeanMaxEstimator(options=dict(n=k, output_prob=True))
+        try:
+            thetahat, le_prob = mme.estimate_point(sample)
+        except:
+            thetahat = mme.estimate_point(sample)
+        if method == 'forward':
+            num = np.log(1 - alpha)
+            if le_prob is None: le_prob = np.mean(sample <= thetahat)
+            denom = np.log(le_prob)
+            return (np.ceil(num / denom) if self.options.get('ceil', True) else num / denom) * self.options['budget']
+        elif method == 'backward':
+            for idx in range(len(sample) ** 2):
+                qme = QuantileMaxEstimator(options=dict(n=idx + 1, quantile=1 - alpha))
+                x = qme.estimate_point(sample)
+                if x >= thetahat:
+                    break
+            return idx + 1
+
+
+ForwardEstimator = MeanMaxBudgetEstimator.gen_class(dict(method='forward'))
+BackwardEstimator = MeanMaxBudgetEstimator.gen_class(dict(method='backward'))

@@ -3,6 +3,7 @@ from functools import lru_cache
 from typing import Any, Dict
 
 from scipy.stats import beta
+from scipy.special import betainc
 import numpy as np
 
 from .ci import bootstrap_ci
@@ -26,7 +27,33 @@ class Estimator(object):
         raise NotImplementedError
 
     def estimate_interval(self, sample: np.ndarray, alpha=0.05):
-        raise NotImplementedError
+        return bootstrap_ci(sample,
+                            self.estimate_point,
+                            alpha=alpha,
+                            method='percentile-bootstrap',
+                            ci_samples=2000)
+
+    @classmethod
+    def gen_class(cls, default_options: Dict[str, Any] = None):
+        def new_object(options=None):
+            options = dict() if options is None else options.copy()
+            options.update(default_options)
+            return cls(options)
+
+        if default_options is None:
+            return cls
+        return new_object
+
+
+@dataclass(frozen=True)
+class JoinedUnbiasedBiasedEstimator(Estimator):
+
+    @property
+    def name(self):
+        return f'{self.options["estimator1"].name} {self.options["estimator2"].name}'
+
+    def estimate_point(self, sample: np.ndarray):
+        var1 = self.options['estimator1_var']
 
 
 @lru_cache(maxsize=1000)
@@ -36,13 +63,22 @@ def beta_cdf_linspace(a, b, n, pow=1):
     return cdfs[1:] - cdfs[:-1]
 
 
+@lru_cache(maxsize=1000)
+def beta_cdf_shifted(a, b, n, pow=1):
+    deltaU = np.array([betainc(a, b, (i / n) ** pow) for i in range(1, n + 1)])
+    deltaL = np.array([betainc(a, b, (i / n) ** pow) for i in range(0, n)])
+    delta = deltaU - deltaL
+    return delta
+
+
 def harrelldavis_estimate(sample, q, pow=1):
     n = len(sample)
     a = (n + 1) * q
     b = (n + 1) * (1 - q)
-    cdf_diff = beta_cdf_linspace(a, b, n, pow=pow)
+    # delta = beta_cdf_linspace(a, b, n, pow=pow)
     sample = np.sort(sample)
-    return np.sum(cdf_diff * sample)
+    delta = beta_cdf_shifted(a, b, n, pow=pow)
+    return np.sum(delta * sample)
 
 
 @lru_cache(maxsize=1000)

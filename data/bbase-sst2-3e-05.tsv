@@ -1,76 +1,76 @@
-model_name	dataset_name	--learning_rate	--seed	set_type	result_name	result
-bert-base-uncased	SST-2	3e-05	125	dev	acc	0.9288990825688074
-bert-base-uncased	SST-2	3e-05	100	dev	acc	0.9288990825688074
-bert-base-uncased	SST-2	3e-05	150	dev	acc	0.926605504587156
-bert-base-uncased	SST-2	3e-05	101	dev	acc	0.9254587155963303
-bert-base-uncased	SST-2	3e-05	126	dev	acc	0.9174311926605505
-bert-base-uncased	SST-2	3e-05	151	dev	acc	0.9231651376146789
-bert-base-uncased	SST-2	3e-05	102	dev	acc	0.9151376146788991
-bert-base-uncased	SST-2	3e-05	127	dev	acc	0.9254587155963303
-bert-base-uncased	SST-2	3e-05	152	dev	acc	0.9288990825688074
-bert-base-uncased	SST-2	3e-05	103	dev	acc	0.9288990825688074
-bert-base-uncased	SST-2	3e-05	128	dev	acc	0.926605504587156
-bert-base-uncased	SST-2	3e-05	153	dev	acc	0.930045871559633
-bert-base-uncased	SST-2	3e-05	104	dev	acc	0.9311926605504587
-bert-base-uncased	SST-2	3e-05	129	dev	acc	0.9208715596330275
-bert-base-uncased	SST-2	3e-05	154	dev	acc	0.9254587155963303
-bert-base-uncased	SST-2	3e-05	105	dev	acc	0.9334862385321101
-bert-base-uncased	SST-2	3e-05	130	dev	acc	0.9220183486238532
-bert-base-uncased	SST-2	3e-05	155	dev	acc	0.9231651376146789
-bert-base-uncased	SST-2	3e-05	106	dev	acc	0.9288990825688074
-bert-base-uncased	SST-2	3e-05	131	dev	acc	0.9311926605504587
-bert-base-uncased	SST-2	3e-05	156	dev	acc	0.9231651376146789
-bert-base-uncased	SST-2	3e-05	107	dev	acc	0.9254587155963303
-bert-base-uncased	SST-2	3e-05	132	dev	acc	0.9277522935779816
-bert-base-uncased	SST-2	3e-05	157	dev	acc	0.9277522935779816
-bert-base-uncased	SST-2	3e-05	108	dev	acc	0.9323394495412844
-bert-base-uncased	SST-2	3e-05	133	dev	acc	0.9334862385321101
-bert-base-uncased	SST-2	3e-05	109	dev	acc	0.926605504587156
-bert-base-uncased	SST-2	3e-05	158	dev	acc	0.926605504587156
-bert-base-uncased	SST-2	3e-05	134	dev	acc	0.9174311926605505
-bert-base-uncased	SST-2	3e-05	110	dev	acc	0.9231651376146789
-bert-base-uncased	SST-2	3e-05	159	dev	acc	0.9220183486238532
-bert-base-uncased	SST-2	3e-05	135	dev	acc	0.9243119266055045
-bert-base-uncased	SST-2	3e-05	111	dev	acc	0.9277522935779816
-bert-base-uncased	SST-2	3e-05	136	dev	acc	0.930045871559633
-bert-base-uncased	SST-2	3e-05	160	dev	acc	0.9357798165137615
-bert-base-uncased	SST-2	3e-05	112	dev	acc	0.9311926605504587
-bert-base-uncased	SST-2	3e-05	137	dev	acc	0.9231651376146789
-bert-base-uncased	SST-2	3e-05	161	dev	acc	0.926605504587156
-bert-base-uncased	SST-2	3e-05	113	dev	acc	0.9254587155963303
-bert-base-uncased	SST-2	3e-05	138	dev	acc	0.930045871559633
-bert-base-uncased	SST-2	3e-05	162	dev	acc	0.930045871559633
-bert-base-uncased	SST-2	3e-05	114	dev	acc	0.9311926605504587
-bert-base-uncased	SST-2	3e-05	139	dev	acc	0.9288990825688074
-bert-base-uncased	SST-2	3e-05	163	dev	acc	0.9288990825688074
-bert-base-uncased	SST-2	3e-05	115	dev	acc	0.9151376146788991
-bert-base-uncased	SST-2	3e-05	140	dev	acc	0.926605504587156
-bert-base-uncased	SST-2	3e-05	164	dev	acc	0.9231651376146789
-bert-base-uncased	SST-2	3e-05	116	dev	acc	0.9334862385321101
-bert-base-uncased	SST-2	3e-05	141	dev	acc	0.9277522935779816
-bert-base-uncased	SST-2	3e-05	117	dev	acc	0.9254587155963303
-bert-base-uncased	SST-2	3e-05	165	dev	acc	0.9254587155963303
-bert-base-uncased	SST-2	3e-05	142	dev	acc	0.930045871559633
-bert-base-uncased	SST-2	3e-05	118	dev	acc	0.9288990825688074
-bert-base-uncased	SST-2	3e-05	166	dev	acc	0.930045871559633
-bert-base-uncased	SST-2	3e-05	143	dev	acc	0.9231651376146789
-bert-base-uncased	SST-2	3e-05	119	dev	acc	0.926605504587156
-bert-base-uncased	SST-2	3e-05	167	dev	acc	0.9243119266055045
-bert-base-uncased	SST-2	3e-05	144	dev	acc	0.9277522935779816
-bert-base-uncased	SST-2	3e-05	120	dev	acc	0.9288990825688074
-bert-base-uncased	SST-2	3e-05	168	dev	acc	0.926605504587156
-bert-base-uncased	SST-2	3e-05	145	dev	acc	0.9277522935779816
-bert-base-uncased	SST-2	3e-05	121	dev	acc	0.9174311926605505
-bert-base-uncased	SST-2	3e-05	169	dev	acc	0.9162844036697247
-bert-base-uncased	SST-2	3e-05	146	dev	acc	0.9208715596330275
-bert-base-uncased	SST-2	3e-05	122	dev	acc	0.930045871559633
-bert-base-uncased	SST-2	3e-05	170	dev	acc	0.9243119266055045
-bert-base-uncased	SST-2	3e-05	147	dev	acc	0.9277522935779816
-bert-base-uncased	SST-2	3e-05	123	dev	acc	0.9288990825688074
-bert-base-uncased	SST-2	3e-05	148	dev	acc	0.9277522935779816
-bert-base-uncased	SST-2	3e-05	171	dev	acc	0.9254587155963303
-bert-base-uncased	SST-2	3e-05	124	dev	acc	0.9243119266055045
-bert-base-uncased	SST-2	3e-05	149	dev	acc	0.9243119266055045
-bert-base-uncased	SST-2	3e-05	172	dev	acc	0.926605504587156
-bert-base-uncased	SST-2	3e-05	173	dev	acc	0.9231651376146789
-bert-base-uncased	SST-2	3e-05	174	dev	acc	0.926605504587156
+model_name	dataset_name	--learning_rate	--seed	set_type	acc
+bert-base-uncased	SST-2	3e-05	125	dev	0.9288990825688074
+bert-base-uncased	SST-2	3e-05	100	dev	0.9288990825688074
+bert-base-uncased	SST-2	3e-05	150	dev	0.926605504587156
+bert-base-uncased	SST-2	3e-05	101	dev	0.9254587155963303
+bert-base-uncased	SST-2	3e-05	126	dev	0.9174311926605505
+bert-base-uncased	SST-2	3e-05	151	dev	0.9231651376146789
+bert-base-uncased	SST-2	3e-05	102	dev	0.9151376146788991
+bert-base-uncased	SST-2	3e-05	127	dev	0.9254587155963303
+bert-base-uncased	SST-2	3e-05	152	dev	0.9288990825688074
+bert-base-uncased	SST-2	3e-05	103	dev	0.9288990825688074
+bert-base-uncased	SST-2	3e-05	128	dev	0.926605504587156
+bert-base-uncased	SST-2	3e-05	153	dev	0.930045871559633
+bert-base-uncased	SST-2	3e-05	104	dev	0.9311926605504587
+bert-base-uncased	SST-2	3e-05	129	dev	0.9208715596330275
+bert-base-uncased	SST-2	3e-05	154	dev	0.9254587155963303
+bert-base-uncased	SST-2	3e-05	105	dev	0.9334862385321101
+bert-base-uncased	SST-2	3e-05	130	dev	0.9220183486238532
+bert-base-uncased	SST-2	3e-05	155	dev	0.9231651376146789
+bert-base-uncased	SST-2	3e-05	106	dev	0.9288990825688074
+bert-base-uncased	SST-2	3e-05	131	dev	0.9311926605504587
+bert-base-uncased	SST-2	3e-05	156	dev	0.9231651376146789
+bert-base-uncased	SST-2	3e-05	107	dev	0.9254587155963303
+bert-base-uncased	SST-2	3e-05	132	dev	0.9277522935779816
+bert-base-uncased	SST-2	3e-05	157	dev	0.9277522935779816
+bert-base-uncased	SST-2	3e-05	108	dev	0.9323394495412844
+bert-base-uncased	SST-2	3e-05	133	dev	0.9334862385321101
+bert-base-uncased	SST-2	3e-05	109	dev	0.926605504587156
+bert-base-uncased	SST-2	3e-05	158	dev	0.926605504587156
+bert-base-uncased	SST-2	3e-05	134	dev	0.9174311926605505
+bert-base-uncased	SST-2	3e-05	110	dev	0.9231651376146789
+bert-base-uncased	SST-2	3e-05	159	dev	0.9220183486238532
+bert-base-uncased	SST-2	3e-05	135	dev	0.9243119266055045
+bert-base-uncased	SST-2	3e-05	111	dev	0.9277522935779816
+bert-base-uncased	SST-2	3e-05	136	dev	0.930045871559633
+bert-base-uncased	SST-2	3e-05	160	dev	0.9357798165137615
+bert-base-uncased	SST-2	3e-05	112	dev	0.9311926605504587
+bert-base-uncased	SST-2	3e-05	137	dev	0.9231651376146789
+bert-base-uncased	SST-2	3e-05	161	dev	0.926605504587156
+bert-base-uncased	SST-2	3e-05	113	dev	0.9254587155963303
+bert-base-uncased	SST-2	3e-05	138	dev	0.930045871559633
+bert-base-uncased	SST-2	3e-05	162	dev	0.930045871559633
+bert-base-uncased	SST-2	3e-05	114	dev	0.9311926605504587
+bert-base-uncased	SST-2	3e-05	139	dev	0.9288990825688074
+bert-base-uncased	SST-2	3e-05	163	dev	0.9288990825688074
+bert-base-uncased	SST-2	3e-05	115	dev	0.9151376146788991
+bert-base-uncased	SST-2	3e-05	140	dev	0.926605504587156
+bert-base-uncased	SST-2	3e-05	164	dev	0.9231651376146789
+bert-base-uncased	SST-2	3e-05	116	dev	0.9334862385321101
+bert-base-uncased	SST-2	3e-05	141	dev	0.9277522935779816
+bert-base-uncased	SST-2	3e-05	117	dev	0.9254587155963303
+bert-base-uncased	SST-2	3e-05	165	dev	0.9254587155963303
+bert-base-uncased	SST-2	3e-05	142	dev	0.930045871559633
+bert-base-uncased	SST-2	3e-05	118	dev	0.9288990825688074
+bert-base-uncased	SST-2	3e-05	166	dev	0.930045871559633
+bert-base-uncased	SST-2	3e-05	143	dev	0.9231651376146789
+bert-base-uncased	SST-2	3e-05	119	dev	0.926605504587156
+bert-base-uncased	SST-2	3e-05	167	dev	0.9243119266055045
+bert-base-uncased	SST-2	3e-05	144	dev	0.9277522935779816
+bert-base-uncased	SST-2	3e-05	120	dev	0.9288990825688074
+bert-base-uncased	SST-2	3e-05	168	dev	0.926605504587156
+bert-base-uncased	SST-2	3e-05	145	dev	0.9277522935779816
+bert-base-uncased	SST-2	3e-05	121	dev	0.9174311926605505
+bert-base-uncased	SST-2	3e-05	169	dev	0.9162844036697247
+bert-base-uncased	SST-2	3e-05	146	dev	0.9208715596330275
+bert-base-uncased	SST-2	3e-05	122	dev	0.930045871559633
+bert-base-uncased	SST-2	3e-05	170	dev	0.9243119266055045
+bert-base-uncased	SST-2	3e-05	147	dev	0.9277522935779816
+bert-base-uncased	SST-2	3e-05	123	dev	0.9288990825688074
+bert-base-uncased	SST-2	3e-05	148	dev	0.9277522935779816
+bert-base-uncased	SST-2	3e-05	171	dev	0.9254587155963303
+bert-base-uncased	SST-2	3e-05	124	dev	0.9243119266055045
+bert-base-uncased	SST-2	3e-05	149	dev	0.9243119266055045
+bert-base-uncased	SST-2	3e-05	172	dev	0.926605504587156
+bert-base-uncased	SST-2	3e-05	173	dev	0.9231651376146789
+bert-base-uncased	SST-2	3e-05	174	dev	0.926605504587156

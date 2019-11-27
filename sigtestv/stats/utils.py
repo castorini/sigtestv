@@ -24,7 +24,8 @@ def pos_mean_ecdf(cdf, sample):
 def ecdf(sample: np.ndarray,
          equality=True,
          sorted=True,
-         start_point=False):
+         start_point=False,
+         return_map=False):
     cdf = []
     if start_point: cdf.append(0)
     if not sorted:
@@ -39,7 +40,11 @@ def ecdf(sample: np.ndarray,
             cdf.append(prob)
     if equality:
         cdf.append(1)
-    return np.unique(cdf), np.unique(sample)
+    sample = np.unique(sample)
+    cdf = np.unique(cdf)
+    if return_map:
+        return {s: c for s, c in zip(sample, cdf)}
+    return cdf, sample
 
 
 def compute_minimum_sample_power(max_p, alpha=0.95):

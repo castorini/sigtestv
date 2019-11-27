@@ -5,6 +5,7 @@ from typing import Sequence, Callable, Tuple
 
 from tqdm import trange
 import numpy as np
+import statsmodels.api as sm
 
 from .test import TwoSampleHypothesisTest
 from .utils import compute_pr_x_ge_y
@@ -14,11 +15,19 @@ BinaryOrderingFn = Callable[[np.ndarray, np.ndarray], float]
 
 
 def dfromc_rvs(bins, cdf, **cdf_kwargs):
-    xs = np.linspace(0, 1, bins)
+    xs = np.linspace(0, 1, bins + 1)
     cdf_gen = partial(cdf, **cdf_kwargs)
-    probs = cdf_gen(xs + 1 / (2 * bins)) - cdf_gen(xs - 1 / (2 * bins))
+    probs = cdf_gen(xs[1:]) - cdf_gen(xs[:-1])
     probs = probs / probs.sum()
-    return partial(np.random.choice, xs, p=probs)
+    return partial(np.random.choice, np.linspace(0, 1, bins), p=probs)
+
+
+def dkde_from_sample_rvs(sample: np.ndarray):
+    kde = sm.nonparametric.KDEUnivariate(sample)
+    kde.fit()
+    pmf = kde.cdf[1:] - kde.cdf[:-1]
+    pmf = pmf / pmf.sum()
+    return partial(np.random.choice, kde.support[:-1], p=pmf)
 
 
 def order_stochastic(d1, d2):
