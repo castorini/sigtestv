@@ -4,7 +4,7 @@ import sys
 
 from matplotlib import pyplot as plt
 from scipy import stats
-from tqdm import tqdm
+from tqdm import tqdm, trange
 import numpy as np
 
 from sigtestv.stats import MeanMaxEstimator, dkde_from_sample_rvs
@@ -21,7 +21,54 @@ def make_texpon_rvs(loc, scale, d: float = 1):
     return partial(stats.truncexpon.rvs, loc=loc, scale=scale, b=b)
 
 
-def simulate(args, estimator_cls, gen_fn, header, ax, plot_range=False):
+def simulate_bs(args, estimator_cls, gen_fn, header):
+    k = args.subsample_size
+    mme = estimator_cls(options=dict(n=k))
+    true_samples = []
+    for _ in range(10):
+        maximums = np.max(gen_fn(size=(k, 100000)), 0)
+        true_samples.extend(maximums)
+    true_param = np.mean(true_samples)
+    results = []
+    for _ in trange(args.num_iters):
+        _, (l, u) = mme.estimate_interval(gen_fn(size=args.sample_size))
+        results.append(int(l <= true_param <= u))
+    tqdm.write(f'{header} (k={k}): {100 * np.mean(results):.2f}')
+
+
+def simulate_mme_test(args, estimator_cls, gen_fn1, gen_fn2):
+    for n in trange(1, args.sample_size + 1):
+        true_samples = []
+        for _ in range(10):
+            maximums = np.max(gen_fn1(size=(n, 100000)), 0)
+            true_samples.extend(maximums)
+        true_param1 = np.mean(true_samples)
+        true_samples = []
+        for _ in range(10):
+            maximums = np.max(gen_fn2(size=(n, 100000)), 0)
+            true_samples.extend(maximums)
+        true_param2 = np.mean(true_samples)
+
+        mme = estimator_cls(options=dict(n=n))
+        name = mme.name
+        errors = []
+        if args.correct_bias:
+            bias1 = np.mean([mme.estimate_point(gen_fn1(size=args.sample_size)) for _ in range(args.num_iters)]) - true_param1
+            bias2 = np.mean([mme.estimate_point(gen_fn2(size=args.sample_size)) for _ in range(args.num_iters)]) - true_param2
+        for _ in range(args.num_iters):
+            estimate1 = mme.estimate_point(gen_fn1(size=args.sample_size))
+            estimate2 = mme.estimate_point(gen_fn2(size=args.sample_size))
+            if args.correct_bias:
+                estimate1 -= bias1
+                estimate2 -= bias2
+            error_flag = int((estimate1 < estimate2 and true_param1 > true_param2) or \
+                             (estimate1 > estimate2 and true_param1 < true_param2))
+            errors.append(error_flag)
+        error_rate = 100 * np.mean(errors)
+        tqdm.write(f'{name} (n={n}) {error_rate:.2f}')
+
+
+def simulate_mme(args, estimator_cls, gen_fn, header, ax, plot_range=False):
     y = []
     y_p25 = []
     y_p75 = []
@@ -55,6 +102,9 @@ def main():
     parser.add_argument('--subsample-size', '-k', type=int, default=None)
     parser.add_argument('--num-iters', '-n', type=int, default=5000)
     parser.add_argument('--use-kde', action='store_true')
+    parser.add_argument('--action', '-a', type=str, default='mme', choices=['mme', 'bs', 'mme-test'])
+    parser.add_argument('--show-hist', '-sh', action='store_true')
+    parser.add_argument('--correct-bias', '-cb', action='store_true')
     args = parser.parse_args()
 
     if args.subsample_size is None:
@@ -72,16 +122,24 @@ def main():
     else:
         gen_fn1 = make_tnorm_rvs(0.5, 0.1, d=0.6)
         gen_fn2 = make_tnorm_rvs(0.25, 0.2, d=0.75)
-    plt.hist(gen_fn1(size=10000), bins=100)
-    plt.show()
-    plt.hist(gen_fn2(size=10000), bins=100)
-    plt.show()
 
-    fig, ax = plt.subplots()
-    simulate(args, MeanMaxEstimator, gen_fn1, 'Small', ax)
-    simulate(args, MeanMaxEstimator, gen_fn2, 'Big', ax)
-    plt.legend()
-    plt.show()
+    if args.show_hist:
+        plt.hist(gen_fn1(size=10000), bins=100)
+        plt.show()
+        plt.hist(gen_fn2(size=10000), bins=100)
+        plt.show()
+
+    if args.action == 'mme':
+        fig, ax = plt.subplots()
+        simulate_mme(args, MeanMaxEstimator, gen_fn1, 'Small', ax)
+        simulate_mme(args, MeanMaxEstimator, gen_fn2, 'Big', ax)
+        plt.legend()
+        plt.show()
+    elif args.action == 'bs':
+        simulate_bs(args, MeanMaxEstimator, gen_fn1, 'Small')
+        simulate_bs(args, MeanMaxEstimator, gen_fn2, 'Big')
+    elif args.action == 'mme-test':
+        simulate_mme_test(args, MeanMaxEstimator, gen_fn1, gen_fn2)
 
 
 if __name__ == '__main__':

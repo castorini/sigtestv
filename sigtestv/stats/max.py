@@ -35,7 +35,7 @@ class MeanMaxEstimator(Estimator):
 
     def __post_init__(self):
         if 'ci_samples' not in self.options:
-            self.options['ci_samples'] = 1000
+            self.options['ci_samples'] = 5000
         if 'ci_method' not in self.options:
             self.options['ci_method'] = 'percentile-bootstrap'
 
