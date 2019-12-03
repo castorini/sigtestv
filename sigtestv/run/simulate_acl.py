@@ -47,24 +47,32 @@ def simulate_mme_test(args, estimator_cls, gen_fn1, gen_fn2):
         for _ in range(10):
             maximums = np.max(gen_fn2(size=(n, 100000)), 0)
             true_samples.extend(maximums)
-        true_param2 = np.mean(true_samples)
+        # true_param2 = np.mean(true_samples)
 
         mme = estimator_cls(options=dict(n=n))
         name = mme.name
         errors = []
         if args.correct_bias:
             bias1 = np.mean([mme.estimate_point(gen_fn1(size=args.sample_size)) for _ in range(args.num_iters)]) - true_param1
-            bias2 = np.mean([mme.estimate_point(gen_fn2(size=args.sample_size)) for _ in range(args.num_iters)]) - true_param2
+            # bias2 = np.mean([mme.estimate_point(gen_fn2(size=args.sample_size)) for _ in range(args.num_iters)]) - true_param2
+        estimates = []
+        pos_error = 0
+        neg_error = 0
         for _ in range(args.num_iters):
             estimate1 = mme.estimate_point(gen_fn1(size=args.sample_size))
             estimate2 = mme.estimate_point(gen_fn2(size=args.sample_size))
             if args.correct_bias:
                 estimate1 -= bias1
-                estimate2 -= bias2
-            error_flag = int((estimate1 < estimate2 and true_param1 > true_param2) or \
-                             (estimate1 > estimate2 and true_param1 < true_param2))
-            errors.append(error_flag)
-        error_rate = 100 * np.mean(errors)
+                # estimate2 -= bias2
+            estimates.append(estimate1)
+            if estimate1 < true_param1:
+                neg_error += 1
+            else:
+                pos_error += 1
+        if neg_error + pos_error == 0:
+            error_rate = 0.5
+        else:
+            error_rate = 100 * np.mean(neg_error / (neg_error + pos_error))
         tqdm.write(f'{name} (n={n}) {error_rate:.2f}')
 
 
@@ -96,15 +104,38 @@ def simulate_mme(args, estimator_cls, gen_fn, header, ax, plot_range=False):
     ax.plot(x, y_true, label=f'True Value ({header})')
 
 
+def export_samples(args, estimator_cls, gen_fn):
+    y = []
+    y_true = []
+    x = list(range(1, args.subsample_size + 1))
+    for k in tqdm(x):
+        true_samples = []
+        for _ in range(10):
+            maximums = np.max(gen_fn(size=(k, 100000)), 0)
+            true_samples.extend(maximums)
+        true_param = np.mean(true_samples)
+        y_true.append(true_param)
+        mme = estimator_cls(options=dict(n=k))
+        estimates = []
+        for _ in range(args.num_iters):
+            estimates.append(mme.estimate_point(gen_fn(size=args.sample_size)))
+        y.append((np.mean(estimates), 1.96 * np.std(estimates) / np.sqrt(args.num_iters)))
+    print('mean,err,ytrue')
+    for (mean, err), yt in zip(y, y_true):
+        print(f'{mean},{err},{yt}')
+
+
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('--sample-size', '-s', type=int, default=50)
     parser.add_argument('--subsample-size', '-k', type=int, default=None)
     parser.add_argument('--num-iters', '-n', type=int, default=5000)
     parser.add_argument('--use-kde', action='store_true')
-    parser.add_argument('--action', '-a', type=str, default='mme', choices=['mme', 'bs', 'mme-test'])
+    parser.add_argument('--action', '-a', type=str, default='mme', choices=['mme', 'bs', 'mme-test', 'export-samples'])
     parser.add_argument('--show-hist', '-sh', action='store_true')
     parser.add_argument('--correct-bias', '-cb', action='store_true')
+    parser.add_argument('--multipliers', '-mult', nargs=2, type=float, default=(1, 1))
+    parser.add_argument('--swapped', action='store_true')
     args = parser.parse_args()
 
     if args.subsample_size is None:
@@ -123,6 +154,11 @@ def main():
         gen_fn1 = make_tnorm_rvs(0.5, 0.1, d=0.6)
         gen_fn2 = make_tnorm_rvs(0.25, 0.2, d=0.75)
 
+    if args.swapped:
+        tmp = gen_fn2
+        gen_fn2 = gen_fn1
+        gen_fn1 = tmp
+
     if args.show_hist:
         plt.hist(gen_fn1(size=10000), bins=100)
         plt.show()
@@ -140,6 +176,9 @@ def main():
         simulate_bs(args, MeanMaxEstimator, gen_fn2, 'Big')
     elif args.action == 'mme-test':
         simulate_mme_test(args, MeanMaxEstimator, gen_fn1, gen_fn2)
+    elif args.action == 'export-samples':
+        export_samples(args, MeanMaxEstimator, gen_fn1)
+        export_samples(args, MeanMaxEstimator, gen_fn2)
 
 
 if __name__ == '__main__':
